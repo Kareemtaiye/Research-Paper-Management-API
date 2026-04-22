@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from functools import wraps
 import asyncpg
 from fastapi import FastAPI
-from app.config import settings
+from app.core.config import settings
 
 _pool = None
 
@@ -28,7 +28,7 @@ def with_connection(func):
     @wraps(func)
     async def wrapper(self, *args, **kwargs):
         # 1. Use existing connection if passed (very important for transactions)
-        if kwargs.get("conn"):
+        if "conn" in kwargs and kwargs["conn"] is not None:
             return await func(self, *args, **kwargs)
 
         # Acquire a fresh connection from the pool if otherwiase
@@ -37,7 +37,7 @@ def with_connection(func):
             kwargs["conn"] = conn
             return await func(self, *args, **kwargs)
 
-        return wrapper
+    return wrapper
 
 
 @asynccontextmanager

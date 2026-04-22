@@ -1,8 +1,12 @@
 from fastapi import FastAPI
-from app.database import lifespan
+from app.core.database import lifespan
 from app.routers import auth
+from app.exceptions.handlers import register_exception_handlers
 
 app = FastAPI(lifespan=lifespan)
+
+# cos gastapi wont call the handlers unless thy're registered or imported in this modile
+register_exception_handlers(app)
 
 app.include_router(auth.router)
 
