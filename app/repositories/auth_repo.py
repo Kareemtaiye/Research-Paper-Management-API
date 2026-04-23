@@ -20,8 +20,6 @@ class AuthRepository:
 
     @with_connection
     async def find_user_by_email(self, email: str, conn: asyncpg.Connection = None):
-        query = """
-        SELECT * FROM users WHERE email = $1
-        """
+        query = "SELECT * FROM users WHERE email = $1"
 
         return await conn.fetchrow(query, email)

@@ -1,8 +1,7 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Header, Response
-from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from app.core.database import get_conn
 from app.exceptions.schemas import ErrorResponse
 from app.schemas.auth import LoginInput
@@ -10,8 +9,6 @@ from app.schemas.user import UserCreate
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth")
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
 
 @router.post("/register", tags=["register"])
@@ -27,7 +24,7 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     x_client_type: Annotated[
         str | None, Header
-    ] = None,  # looking for custom header for m
+    ] = None,  # looking for custom header for mobile
 ):
     service = AuthService()
 
@@ -59,4 +56,4 @@ async def login(
             path="/auth/",
         )
 
-    return JSONResponse(status_code=200, content={"status": "success", "data": data})
+    return JSONResponse(status_code=200, content={"status": "success", **data})
