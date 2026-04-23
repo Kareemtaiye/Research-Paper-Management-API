@@ -38,7 +38,6 @@ class AuthService:
         # try:
         #     print()
         # except:
-        print(user)
         access_token = generate_access_token(str(user["id"]))
         refresh_token = generate_refresh_token()
 

@@ -8,11 +8,6 @@ load_dotenv()
 class Settings(BaseSettings):
     database_url: str | None = os.getenv("DATABASE_URL")
     secret_key: str | None = os.getenv("SECRET_KEY")
-    # db_name: str
-    # db_port: int
-    # db_user: str
-    # db_host: str
-    # db_pass: str
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
 

@@ -4,6 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from asyncpg.exceptions import UniqueViolationError
 from h11 import Request
+from jwt.exceptions import DecodeError, ExpiredSignatureError as ExpiredJWTError
 from app.exceptions.schemas import ErrorResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -11,12 +12,13 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 # instead of relying on decorators in another module
 def register_exception_handlers(app):  # explicit reg(to avoid silent import issues)
     @app.exception_handler(UniqueViolationError)
-    async def duplicate_db_value_handler(request, exc: UniqueViolationError):
+    def duplicate_db_value_handler(request, exc: UniqueViolationError):
         match = re.search(
             r"[\w .]+\(([^)]+)\)=\(([^)]+)\)[\w .]+", exc.detail, flags=re.IGNORECASE
         )
         message = "Duplicate value violates a unique constraint."
-        details = {"constraint": exc.constraint_name}
+        # details = {"constraint": exc.constraint_name}
+        details = {}
 
         if match:
             field, value = match.groups()
@@ -30,7 +32,7 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
         return JSONResponse(status_code=err_obj.code, content=err_obj.model_dump())
 
     @app.exception_handler(RequestValidationError)
-    async def req_validation_exception_handler(request, exc: RequestValidationError):
+    def req_validation_exception_handler(request, exc: RequestValidationError):
 
         details = [
             {
@@ -52,9 +54,25 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
         return JSONResponse(status_code=500, content=err_obj.model_dump())
 
     @app.exception_handler(StarletteHTTPException)
-    async def custom_http_exception_handler(
-        request: Request, exc: StarletteHTTPException
-    ):
+    def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
         return JSONResponse(
             status_code=exc.status_code, content=jsonable_encoder(exc.detail)
+        )
+
+    @app.exception_handler(ExpiredJWTError)
+    def expired_jwt_handler(request: Request, exc: ExpiredJWTError):
+        return JSONResponse(
+            status_code=400,
+            content=jsonable_encoder(
+                ErrorResponse(code=400, message="Access token expired")
+            ),
+        )
+
+    @app.exception_handler(DecodeError)
+    def invalid_jwt_handler(request: Request, exc: ExpiredJWTError):
+        return JSONResponse(
+            status_code=400,
+            content=jsonable_encoder(
+                ErrorResponse(code=400, message="Invalid access token")
+            ),
         )
