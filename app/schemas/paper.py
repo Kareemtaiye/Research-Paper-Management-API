@@ -9,10 +9,10 @@ class PaperCreate(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     title: str
-    owner_id: str | UUID
     content: str | None = None
 
 
 class PaperOuputData(PaperCreate):
+    owner_id: str | UUID
     created_at: Any
     updated_at: Any

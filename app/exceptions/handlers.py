@@ -2,7 +2,7 @@ import re
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from asyncpg.exceptions import UniqueViolationError
+from asyncpg.exceptions import UniqueViolationError, DataError
 from h11 import Request
 from jwt.exceptions import DecodeError, ExpiredSignatureError as ExpiredJWTError
 from app.exceptions.schemas import ErrorResponse
@@ -75,4 +75,12 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
             content=jsonable_encoder(
                 ErrorResponse(code=400, message="Invalid access token")
             ),
+        )
+
+    @app.exception_handler(DataError)
+    def db_insertion_data_error_handler(request: Request, exc: DataError):
+
+        return JSONResponse(
+            status_code=400,
+            content=jsonable_encoder(ErrorResponse(code=400, message=str(exc))),
         )
