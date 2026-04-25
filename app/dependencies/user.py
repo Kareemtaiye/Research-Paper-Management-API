@@ -12,6 +12,13 @@ from app.services.user import UserService
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)], conn=Depends(get_conn)
 ) -> UserOutput:
+
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail=ErrorResponse(status="error", code=401, message="Not Authenticated"),
+        )
+
     payload = verify_jwt(token)
 
     service = UserService()

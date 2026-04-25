@@ -6,7 +6,9 @@ from pwdlib import PasswordHash
 import jwt
 from app.core.config import settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token", auto_error=False)
+
+DUMMY_HASH = PasswordHash.recommended().hash("dummy_hasg")
 
 
 def hash_password(password: str):
