@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
@@ -53,3 +53,14 @@ async def read_all_papers(
     )
 
     return JSONResponse(status_code=200, content=jsonable_encoder(response_obj))
+
+
+@router.get("/{paper_id}")
+async def read_one_paper(
+    paper_id: str, conn=Depends(get_conn), current_user=Depends(get_current_user)
+):
+    service = PaperService()
+
+    paper = await service.get_paper(conn=conn, id=str(paper_id))
+
+    return JSONResponse(status_code=200, content=jsonable_encoder(paper))

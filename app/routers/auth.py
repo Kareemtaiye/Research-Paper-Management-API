@@ -7,6 +7,7 @@ from app.exceptions.schemas import ErrorResponse
 from app.schemas.auth import LoginInput
 from app.schemas.user import UserCreate
 from app.services.auth_service import AuthService
+from app.core.logger import logger
 
 router = APIRouter(prefix="/auth")
 
@@ -35,6 +36,7 @@ async def login(
     )
 
     if not token_data:
+        logger.warning("Invalid login attempt")
         raise HTTPException(
             status_code=400,
             detail=(ErrorResponse(code=400, message="Invalid email or password")),

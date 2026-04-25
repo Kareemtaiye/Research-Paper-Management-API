@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from app.core.database import lifespan
 from app.routers import auth, user, paper
