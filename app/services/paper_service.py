@@ -4,6 +4,7 @@ from app.core.exceptions import PaperNotFoundException
 from app.repositories.paper_repo import PaperRepository
 
 from app.schemas.request import ListQueryParams
+from app.services.paper_tag_service import PaperTagsService
 from app.utils.generators import gen_list_doc
 from app.core.logger import logger
 
@@ -38,3 +39,10 @@ class PaperService:
         if count == 0:
             raise PaperNotFoundException(id)
         return count
+
+    async def add_tag(self, conn, paper_id: str, tag_id: str):
+        paper_tag_service = PaperTagsService()
+
+        return await paper_tag_service.add_tag_to_paper(
+            conn=conn, paper_id=paper_id, tag_id=tag_id
+        )

@@ -123,3 +123,18 @@ async def delete_paper(
 
     await service.delete_paper(conn=conn, id=paper_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{paper_id}/add-tag/{tag_id}", tags=["paper-tags"])
+async def add_paper_tag(
+    paper_id: str,
+    tag_id: str,
+    conn=Depends(get_conn),
+    current_user=Depends(get_current_user),
+):
+    paper_tag_id = await service.add_tag(conn=conn, paper_id=paper_id, tag_id=tag_id)
+
+    return JSONResponse(
+        status_code=201,
+        content={"status": "success", "message": "Tag added successfully"},
+    )

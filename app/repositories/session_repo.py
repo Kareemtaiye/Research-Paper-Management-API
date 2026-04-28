@@ -37,9 +37,10 @@ class SessionRepository:
 
     @with_connection
     async def delete_session_by_token(self, conn: asyncpg.Connection, token_hash: str):
-        """Returns the number of updated sessions row - 0 if no row was updated"""
-        query = "DELETE FROM sessions WHERE token_hash = $1"
+        query = """
+            DELETE FROM sessions 
+            WHERE token_hash = $1 
+            RETURNING user_id
+        """
 
-        status_str = await conn.execute(query, token_hash)
-        operation, _, affected_row = status_str.rpartition(" ")
-        return int(affected_row)
+        return await conn.fetchval(query, token_hash)
