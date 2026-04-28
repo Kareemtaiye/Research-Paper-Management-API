@@ -20,7 +20,6 @@ class PaperTagRepository:
     async def get_all_paper_tag(
         self, conn: asyncpg.Connection, page: int, per_page: int
     ):
-
         offset = (page - 1) * per_page
         data_query = "SELECT * FROM paper_tags OFFSET $1 LIMIT $2"
         count_query = "SELECT COUNT(*) FROM paper_tags"
