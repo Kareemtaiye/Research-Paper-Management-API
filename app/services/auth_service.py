@@ -76,25 +76,26 @@ class AuthService:
 
     async def refresh_token(self, conn: asyncpg.Connection, refresh_token: str):
         # delete the old session and create a new session
-        async with conn.transaction:
-            count = await session_service.repo.delete_session_by_token(
+        async with conn.transaction():
+            user_id = await session_service.repo.delete_session_by_token(
                 conn=conn, token_hash=hash_token(refresh_token)
             )
 
-            if count == 0:
+            if not user_id:
                 raise SessionNotFoundException(refresh_token)
 
             # New refresh token
             new_refresh_token = generate_refresh_token()
 
-            session: Any = await session_service.repo.create_session(
+            session: Any = await session_service.create_session(
                 conn=conn,
                 session_data=SessionCreate(
-                    user_id=session["user_id"], token_hash=hash_token(new_refresh_token)
+                    user_id=user_id, token_hash=hash_token(new_refresh_token)
                 ),
             )
 
-            # New access token
-            access_token = generate_access_token(data=session["user_id"])
+            logger.info(f"User with id: {user_id} refreshed their token")
 
+            # New access token
+            access_token = generate_access_token(data=str(session["user_id"]))
         return {"access_token": access_token, "refresh_token": new_refresh_token}
