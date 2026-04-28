@@ -1,9 +1,11 @@
-from datetime import datetime, timezone, timedelta
-import secrets
-from fastapi.security import OAuth2PasswordBearer
-from pwdlib import PasswordHash
+import hashlib
+from typing import Any
 
 import jwt
+import secrets
+from datetime import datetime, timezone, timedelta
+from fastapi.security import OAuth2PasswordBearer
+from pwdlib import PasswordHash
 from app.core.config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token", auto_error=False)
@@ -16,12 +18,16 @@ def hash_password(password: str):
     return password_hash.hash(password)
 
 
+def hash_token(token: str):
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
 def verify_password(password: str, hash_str: str):
     password_hash = PasswordHash.recommended()
     return password_hash.verify(password, hash=hash_str)
 
 
-def generate_access_token(data):
+def generate_access_token(data: Any):
     expiry_time = datetime.now(timezone.utc) + timedelta(
         minutes=settings.access_token_expire_minutes
     )
@@ -35,5 +41,4 @@ def generate_refresh_token():
 
 
 def verify_jwt(token: str):
-
     return jwt.decode(token, settings.secret_key, algorithms=["HS256"])

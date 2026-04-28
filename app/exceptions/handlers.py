@@ -7,6 +7,10 @@ from fastapi.responses import JSONResponse
 from asyncpg.exceptions import UniqueViolationError, DataError
 from jwt.exceptions import DecodeError, ExpiredSignatureError as ExpiredJWTError
 from pydantic_core import ValidationError
+from app.core.exceptions import (
+    ResourceNotFoundException,
+    SessionNotFoundException,
+)
 from app.exceptions.schemas import ErrorResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.logger import logger
@@ -40,7 +44,6 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
 
     @app.exception_handler(RequestValidationError)
     def req_validation_exception_handler(request: Request, exc: RequestValidationError):
-
         details = [
             {
                 "api_param": err["loc"][0] or None,
@@ -117,9 +120,48 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
 
     @app.exception_handler(DataError)
     def db_insertion_data_error_handler(request: Request, exc: DataError):
-        logger.warning(f"Database insertion error: {exc}")
+        logger.warning(f"Database Data error: {exc}")
 
         return JSONResponse(
             status_code=400,
             content=jsonable_encoder(ErrorResponse(code=400, message=str(exc))),
         )
+
+    @app.exception_handler(ResourceNotFoundException)
+    def resource_not_found_exc_handler(
+        request: Request, exc: ResourceNotFoundException
+    ):
+
+        logger.error(
+            f"{exc.name} not found: {exc.resource_id} | Path: {request.url.path} - {request.method}"
+        )
+
+        return JSONResponse(
+            status_code=400,
+            content=jsonable_encoder(
+                ErrorResponse(
+                    status="error",
+                    code=404,
+                    message=f"{exc.name} with id_ {exc.resource_id} does not exist",
+                    # message=f"Paper with id_ {exc} does not exist",
+                ),
+            ),
+        )
+
+    # Refactored the custom exceptions to a general resource not found exc to prevent repeated code
+    # @app.exception_handler(SessionNotFoundError)
+    # def session_not_found_handler(request: Request, exc: SessionNotFoundError):
+    #     logger.error(
+    #         f"Session not found: {exc.session_id} | Path: {request.url.path} - {request.method}"
+    #     )
+
+    #     return JSONResponse(
+    #         status_code=400,
+    #         content=jsonable_encoder(
+    #             ErrorResponse(
+    #                 status="error",
+    #                 code=400,
+    #                 message=f"Session with id_ {exc.session_id} does not exist",
+    #             ),
+    #         ),
+    #     )

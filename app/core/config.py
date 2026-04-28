@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     secret_key: str | None = os.getenv("SECRET_KEY")
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
+    env: str | None = os.getenv("ENV")
 
     class Config:
         env_file = ".env"

@@ -11,12 +11,13 @@ class PaperRepository:
             VALUES ($1, $2, $3)
             RETURNING *
         """
+
         return await conn.fetchrow(
             query, data["title"], data["owner_id"], data["content"]
         )
 
     @with_connection
-    async def get_all_papers(self, conn: asyncpg.Connection, page, per_page):
+    async def get_all_papers(self, conn: asyncpg.Connection, page: int, per_page: int):
 
         offset = (page - 1) * per_page
 
@@ -25,7 +26,6 @@ class PaperRepository:
 
         data = await conn.fetch(data_query, offset, per_page)
         count = await conn.fetchval(count_query)
-
         return {"data": data, "count": count}
 
     @with_connection
@@ -36,16 +36,15 @@ class PaperRepository:
 
     @with_connection
     async def get_user_papers(
-        self, conn: asyncpg.Connection, user_id: str, page, per_page
+        self, conn: asyncpg.Connection, user_id: str, page: int, per_page: int
     ):
         offset = (page - 1) * per_page
 
         data_query = " SELECT * FROM papers WHERE owner_id = $1 OFFSET $2 LIMIT $3"
-        count_query = "SELECT COUNT(*) FROM papers"
+        count_query = "SELECT COUNT(*) FROM papers WHERE owner_id = $1"
 
         data = await conn.fetch(data_query, user_id, offset, per_page)
-        count = await conn.fetchval(count_query)
-
+        count = await conn.fetchval(count_query, user_id)
         return {"data": data, "count": count}
 
     @with_connection
@@ -55,5 +54,4 @@ class PaperRepository:
 
         status_str = await conn.execute(query, paper_id)
         operation, _, affected_row = status_str.rpartition(" ")
-
         return int(affected_row)

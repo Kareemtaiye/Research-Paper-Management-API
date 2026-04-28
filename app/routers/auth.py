@@ -1,20 +1,22 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Header, Response
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Header, Response, Request
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from app.core.database import get_conn
+from app.dependencies.user import get_current_user
 from app.exceptions.schemas import ErrorResponse
 from app.schemas.auth import LoginInput
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserOutput
 from app.services.auth_service import AuthService
 from app.core.logger import logger
 
 router = APIRouter(prefix="/auth")
 
+service = AuthService()
+
 
 @router.post("/register", tags=["register"])
 async def register_user(user_data: UserCreate, conn=Depends(get_conn)):
-    service = AuthService()
     return await service.register(user_data=user_data, conn=conn)
 
 
@@ -27,7 +29,6 @@ async def login(
         str | None, Header
     ] = None,  # looking for custom header for mobile
 ):
-    service = AuthService()
 
     # email and password
     token_data = await service.login(
@@ -52,10 +53,39 @@ async def login(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=True,
+            secure=False,
             samesite="lax",
             max_age=604800,
             path="/auth/",
         )
 
-    return JSONResponse(status_code=200, content={"status": "success", **data})
+    # FastAPI will use the 'response' parameter to send the cookies.
+    return {"status": "success", **data}
+
+
+@router.post("/logout", tags=["logout"])
+async def logout(
+    response: Response,
+    refresh_token: Annotated[str | None, Cookie()] = None,
+    conn=Depends(get_conn),
+    current_user: UserOutput = Depends(get_current_user),
+):
+
+    if not refresh_token:
+        return Response(status_code=204)  # Already logged out
+
+    session = await service.logout(conn=conn, token=refresh_token)
+
+    if not session:
+        return Response(status_code=204)  # Session might be deleted(by logging out)
+
+    # clearing the cookie
+    response.delete_cookie(key="refresh_token")
+    return Response(status_code=204)
+
+
+@router.post("/refresh", tags=["refresh"])
+async def refresh_token(
+    refresh_token: Annotated[str | None, Cookie()] = None, conn=Depends(get_conn)
+):
+    data = await service.refresh_token(conn=conn, refresh_token=refresh_token)

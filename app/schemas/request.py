@@ -1,5 +1,4 @@
-from fastapi import Query
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class QueryParams(BaseModel):
