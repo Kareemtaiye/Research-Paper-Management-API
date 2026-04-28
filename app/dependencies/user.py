@@ -6,7 +6,7 @@ from app.core.database import get_conn
 from app.core.security import oauth2_scheme, verify_jwt
 from app.exceptions.schemas import ErrorResponse
 from app.schemas.user import UserOutput
-from app.services.user import UserService
+from app.services.user_service import UserService
 
 
 async def get_current_user(
@@ -30,4 +30,4 @@ async def get_current_user(
             detail=ErrorResponse(code=400, message="Invalid access token"),
         )
 
-    return user
+    return UserOutput(**user)

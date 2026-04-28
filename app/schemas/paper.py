@@ -16,3 +16,4 @@ class PaperOuputData(PaperCreate):
     owner_id: str | UUID
     created_at: Any
     updated_at: Any
+    id: str | UUID

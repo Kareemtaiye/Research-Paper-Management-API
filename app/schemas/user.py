@@ -1,4 +1,7 @@
-from pydantic import BaseModel, EmailStr
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class BaseUser(BaseModel):
@@ -11,5 +14,7 @@ class UserCreate(BaseUser):
 
 
 class UserOutput(BaseUser):
-    id: str
-    created_at: str
+    model_config = ConfigDict(extra="ignore")
+
+    id: str | UUID
+    created_at: Any

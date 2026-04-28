@@ -1,5 +1,11 @@
+from hmac import new
+from typing import Any
+
+import asyncpg
+
+from app.core.exceptions import SessionNotFoundException
 from app.core.logger import logger
-from app.schemas.auth import LoginInput
+from app.schemas.auth import LoginInput, SessionCreate
 from app.schemas.user import UserCreate
 from app.repositories.auth_repo import AuthRepository
 from app.core.security import (
@@ -7,8 +13,12 @@ from app.core.security import (
     generate_access_token,
     generate_refresh_token,
     hash_password,
+    hash_token,
     verify_password,
 )
+from app.services.session_service import SessionService
+
+session_service = SessionService()
 
 
 class AuthService:
@@ -37,12 +47,54 @@ class AuthService:
         if not password_match:
             return None
 
-        # Create a session
-        # try:
-        #     print()
-        # except:
         access_token = generate_access_token(str(user["id"]))
         refresh_token = generate_refresh_token()
 
+        # Create a session for the user
+        session_service = SessionService()
+
+        try:
+            await session_service.repo.create_session(
+                conn=conn,
+                session_data={
+                    "user_id": user["id"],
+                    "token_hash": hash_token(refresh_token),
+                },
+            )
+        except Exception as e:
+            logger.exception(f"Failed to create session for user: {user["email"]}")
+            raise
+
         logger.info(f"User {user["email"]} login successfully")
         return access_token, refresh_token
+
+    async def logout(self, conn, token: str):
+
+        return await session_service.repo.delete_session_by_token(
+            conn=conn, token_hash=hash_token(token)
+        )
+
+    async def refresh_token(self, conn: asyncpg.Connection, refresh_token: str):
+        # delete the old session and create a new session
+        async with conn.transaction:
+            count = await session_service.repo.delete_session_by_token(
+                conn=conn, token_hash=hash_token(refresh_token)
+            )
+
+            if count == 0:
+                raise SessionNotFoundException(refresh_token)
+
+            # New refresh token
+            new_refresh_token = generate_refresh_token()
+
+            session: Any = await session_service.repo.create_session(
+                conn=conn,
+                session_data=SessionCreate(
+                    user_id=session["user_id"], token_hash=hash_token(new_refresh_token)
+                ),
+            )
+
+            # New access token
+            access_token = generate_access_token(data=session["user_id"])
+
+        return {"access_token": access_token, "refresh_token": new_refresh_token}
