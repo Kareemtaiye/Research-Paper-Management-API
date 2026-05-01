@@ -12,7 +12,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         start_time = time.time()
-
         # request info
         client_ip = request.client.host
         # Check for X-Forwarded-For header
