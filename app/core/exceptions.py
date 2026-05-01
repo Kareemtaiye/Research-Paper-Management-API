@@ -3,7 +3,7 @@ from uuid import UUID
 
 # ---- Current Version -----
 class ResourceNotFoundException(Exception):
-    def __init__(self, resouce_id: str | UUID, name: str):
+    def __init__(self, resouce_id: str | UUID, name: str = "Resource"):
         self.resource_id = resouce_id
         self.name = name
 

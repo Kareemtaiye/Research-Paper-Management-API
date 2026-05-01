@@ -3,5 +3,6 @@
 __pycache__
 app/__pycache__
 .mypy_cache
-*.txt
+notes.txt
 *.log
+*.dump

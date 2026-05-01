@@ -1,14 +1,16 @@
-from typing import Annotated
+from typing import Annotated, Any
 from venv import logger
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-
 from fastapi import Response, status
 
 from app.core.database import get_conn
+
+# from app.dependencies.permission import restricted_to
 from app.dependencies.user import get_current_user
+from app.dependencies.permission import RequireOwnerOrRole, RequireRole
 from app.exceptions.schemas import ErrorResponse
 from app.schemas.paper import PaperCreate, PaperOuputData
 from app.schemas.request import ListQueryParams
@@ -19,6 +21,9 @@ from app.services.paper_service import PaperService
 
 router = APIRouter(prefix="/papers", tags=["papers"])
 service = PaperService()
+
+admin_only = RequireRole(["admin"])
+# admin_only = RoleChecker(["admin"])
 
 
 @router.post("/")
@@ -45,7 +50,11 @@ async def create_paper_entry(
 
 @router.get("/", response_model=ListResponse)
 async def read_all_papers(
-    params: Annotated[ListQueryParams, Query()], conn=Depends(get_conn)
+    params: Annotated[ListQueryParams, Query()],
+    conn=Depends(get_conn),
+    # user: UserOutput = Depends(restricted_to("admin")),
+    user: UserOutput = Depends(get_current_user),
+    _: None = Depends(admin_only),
 ):
 
     data = await service.get_all_papers(conn=conn, query_params=params)
@@ -85,43 +94,47 @@ async def read_my_papers(
     )
 
 
-@router.get("/{paper_id}")
+@router.get("/{resource_id}")
 async def read_one_paper(
-    paper_id: str,
+    resource_id: str,
+    paper: Annotated[Any, Depends(RequireOwnerOrRole(service.get_paper))],
     conn=Depends(get_conn),
-    current_user: UserOutput = Depends(get_current_user),
+    _: UserOutput = Depends(get_current_user),
 ):
 
-    paper = await service.get_paper(conn=conn, id=str(paper_id))
+    # The paper is already returned from RequireOwnerOrRole dep
+    # paper = await service.get_paper(conn=conn, id=str(resource_id))
     return JSONResponse(
         status_code=200, content={"status": "success", "data": jsonable_encoder(paper)}
     )
 
 
-@router.delete("/{paper_id}")
+@router.delete("/{resource_id}")
 async def delete_paper(
-    paper_id: str,
+    paper: Annotated[Any, Depends(RequireOwnerOrRole(service.get_paper))],
+    resource_id: str,
     conn=Depends(get_conn),
-    current_user: UserOutput = Depends(get_current_user),
+    _: UserOutput = Depends(get_current_user),  # for authentication
+    # This magic line handles: Auth, Role check, Fetching, and Ownership check!
 ):
-    paper = await service.get_paper(conn=conn, id=paper_id)
+    # paper = await service.get_paper(conn=conn, id=paper_id)
 
-    if paper["owner_id"] != current_user.id:
-        logger.error(
-            f"User {current_user.email} tried to delete non owned paper: {paper_id}"
-        )
-        raise HTTPException(
-            status_code=403,
-            detail=jsonable_encoder(
-                ErrorResponse(
-                    status="error",
-                    code=403,
-                    message="Cannot delete paper that is not your own",
-                )
-            ),
-        )
+    # if paper["owner_id"] != current_user.id:
+    #     logger.error(
+    #         f"User {current_user.email} tried to delete non owned paper: {paper_id}"
+    #     )
+    #     raise HTTPException(
+    #         status_code=403,
+    #         detail=jsonable_encoder(
+    #             ErrorResponse(
+    #                 status="error",
+    #                 code=403,
+    #                 message="Cannot delete paper that is not your own",
+    #             )
+    #         ),
+    #     )
 
-    await service.delete_paper(conn=conn, id=paper_id)
+    await service.delete_paper(conn=conn, id=paper["id"])
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
