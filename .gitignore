@@ -5,4 +5,5 @@ app/__pycache__
 .mypy_cache
 notes.txt
 *.log
-*.dump
+dump.rdb
+*.rdb
