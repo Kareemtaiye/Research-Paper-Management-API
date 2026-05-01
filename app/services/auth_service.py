@@ -33,7 +33,7 @@ class AuthService:
             conn=conn, user_data={**user_data.model_dump(), "password": password_hash}
         )
 
-        logger.info(f"User {user["email"]} signed up successfully")
+        logger.info(f"User {user['email']} signed up successfully")
         return user
 
     async def login(self, conn, user_data: LoginInput):
@@ -62,10 +62,10 @@ class AuthService:
                 },
             )
         except Exception as e:
-            logger.exception(f"Failed to create session for user: {user["email"]}")
+            logger.exception(f"Failed to create session for user: {user['email']}")
             raise
 
-        logger.info(f"User {user["email"]} login successfully")
+        logger.info(f"User {user['email']} login successfully")
         return access_token, refresh_token
 
     async def logout(self, conn, token: str):
