@@ -23,8 +23,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.WINDOW = 60
 
     async def dispatch(self, request: Request, call_next):
-        # identify client
+        # identify client..
         ip = request.client.host
+
+        # Check for X-Forwarded-For header
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            # Get the first IP in the comma-separated list
+            ip = forwarded.split(",")[0].strip()
+
         path = request.url.path
 
         # chose limit
