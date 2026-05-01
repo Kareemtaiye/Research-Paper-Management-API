@@ -143,7 +143,7 @@ async def add_paper_tag(
     paper_id: str,
     tag_id: str,
     conn=Depends(get_conn),
-    current_user=Depends(get_current_user),
+    _=Depends(get_current_user),
 ):
     paper_tag_id = await service.add_tag(conn=conn, paper_id=paper_id, tag_id=tag_id)
 

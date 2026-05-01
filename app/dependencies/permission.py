@@ -70,7 +70,7 @@ class RequireOwnerOrRole:
             raise ResourceNotFoundException(resource_id)
 
         # adnin override
-        if current_user.role in self.allowed_roles:
+        if current_user.role.lower() in self.allowed_roles:
             logger.info(
                 f"Admin {current_user.email} accessing resource: {str(resource)}"
             )

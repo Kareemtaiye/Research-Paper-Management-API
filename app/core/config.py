@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
     env: str | None = os.getenv("ENV")
+    redis_url: str = os.getenv("REDIS_URL")
 
     class Config:
         env_file = ".env"

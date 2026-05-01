@@ -1,7 +1,11 @@
 fastapi
 uvicorn
+pydantic-settings
 asyncpg
 redis
 pydantic
 python-dotenv
-pwdlib
+pwdlib[argon2]
+PyJWT
+email-validator
+python-multipart
