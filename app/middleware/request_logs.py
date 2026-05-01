@@ -14,9 +14,15 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         start_time = time.time()
 
         # request info
+        client_ip = request.client.host
+        # Check for X-Forwarded-For header
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            # Get the first IP in the comma-separated list
+            ip = forwarded.split(",")[0].strip()
+
         method = request.method
         path = request.url.path
-        client_ip = request.client.host
 
         try:
             response = await call_next(request)

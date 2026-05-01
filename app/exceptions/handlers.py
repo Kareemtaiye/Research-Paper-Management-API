@@ -97,6 +97,13 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
     @app.exception_handler(ExpiredJWTError)
     def expired_jwt_handler(request: Request, exc: ExpiredJWTError):
         client_ip = request.client.host if request.client else "unknown"
+
+        # Check for X-Forwarded-For header
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            # Get the first IP in the comma-separated list
+            client_ip = forwarded.split(",")[0].strip()
+
         logger.error(f"Access token expired for request. IP: {client_ip}")
 
         return JSONResponse(
@@ -108,7 +115,14 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
 
     @app.exception_handler(DecodeError)
     def invalid_jwt_handler(request: Request, exc: ExpiredJWTError):
+
         client_ip = request.client.host if request.client else "unknown"
+        # Check for X-Forwarded-For header
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            # Get the first IP in the comma-separated list
+            client_ip = forwarded.split(",")[0].strip()
+
         logger.warning(f"Invalid Access token attempt from. IP: {client_ip}")
 
         return JSONResponse(
