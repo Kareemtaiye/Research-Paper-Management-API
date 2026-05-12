@@ -29,6 +29,19 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d # Initialize the db
+  db_test:
+    image: postgres:15
+    container_name: postgres_db_test
+    restart: always
+    environment:
+      POSTGRES_USER_TEST: test_user
+      POSTGRES_PASSWORD_TEST: password_test
+      POSTGRES_DB: test_app_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d # Initialize the db
 
   redis:
     image: redis:7
@@ -38,3 +51,4 @@ services:
 
 volumes:
   postgres_data:
+  postgres_test_data:
