@@ -1,22 +1,32 @@
 import os
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
-
-load_dotenv()
-
+# Determine which env file to use BEFORE loading the class
+# Default to '.env' if no ENV variable is explicitly set in the terminal
+ENV_FILE = ".env.test" if os.getenv("ENV") == "test" else ".env"
 
 class Settings(BaseSettings):
-    database_url: str | None = os.getenv("DATABASE_URL")
-    secret_key: str | None = os.getenv("SECRET_KEY")
-    access_token_expire_minutes: int = os.getenv("access_token_expire_minutes") or 15
-    refresh_token_expire_days: int = os.getenv("refresh_token_expire_days") or 7
-    env: str | None = os.getenv("ENV")
-    redis_url: str = os.getenv("REDIS_URL")
+    # Let Pydantic automatically fetch these from the environment/env_file
+    database_url: str 
+    secret_key: str 
+    env: str = "development"
+    redis_url: str 
 
-    class Config:
-        env_file = ".env"
-        test_env_file = ".env.test"
+    # Pydantic will automatically cast these strings from the env to integers
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int =  7
+
+    # 3. Tell Pydantic which file to read
+    # ---- v2 -----
+    model_config = SettingsConfigDict(
+        env_file = ENV_FILE,
+        extra = "ignore"
+    )
+
+    # ----- v1 -------
+    # class Config:
+    #     env_file = ".env"
+    #     test_env_file = ".env.test"
     
 
 
