@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI):
 
     for attempt in range(1, max_retry + 1):
         try:
-            logger.info(f"Connecting to Postgres DB {attempt}/{max_retry})...")
+            logger.info(f"Connecting to Postgres DB ({attempt}/{max_retry})...")
             # Initialize the pool once on startup
             _pool = await asyncpg.create_pool(
                 dsn=settings.database_url, max_size=20, ssl=None
@@ -81,3 +81,4 @@ async def lifespan(app: FastAPI):
     if _pool:
         await _pool.close()
         logger.info("Database pool closed safely")
+
