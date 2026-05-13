@@ -7,6 +7,12 @@ from app.exceptions.handlers import register_exception_handlers
 
 app = FastAPI(lifespan=lifespan)
 
+
+@app.get("/health", tags=["Health"])
+def check_health():
+    return "Ok"
+
+
 # cos gastapi wont call the handlers unless thy're registered or imported in this modile
 register_exception_handlers(app)
 app.add_middleware(RateLimitMiddleware)

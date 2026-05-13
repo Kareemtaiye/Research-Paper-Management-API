@@ -14,7 +14,7 @@ services:
       - REDIS_URL=redis://redis:6379
     volumes:
       - .:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app
+    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app
 
   postgres:
     image: postgres:15
@@ -24,8 +24,8 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: app_db
-    ports:
-      - "5432:5432"
+    # ports:
+    #   - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d # Initialize the db
@@ -34,11 +34,11 @@ services:
     container_name: postgres_db_test
     restart: always
     environment:
-      POSTGRES_USER_TEST: test_user
-      POSTGRES_PASSWORD_TEST: password_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: password_test
       POSTGRES_DB: test_app_db
-    ports:
-      - "5433:5432"
+    # ports:
+    #   - "5433:5432"
     volumes:
       - postgres_test_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d # Initialize the db
