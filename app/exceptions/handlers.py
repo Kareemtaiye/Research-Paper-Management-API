@@ -44,6 +44,26 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
 
     @app.exception_handler(RequestValidationError)
     def req_validation_exception_handler(request: Request, exc: RequestValidationError):
+        # # Safely extract location fields
+        # details = []
+        # for err in exc.errors():
+        #     loc = err.get("loc", [])
+
+        #     # Get the source (e.g., 'body', 'query', 'path')
+        #     api_param = loc[0] if len(loc) > 0 else None
+
+        #     # Get the specific field name safely
+        #     field = loc[1] if len(loc) > 1 else ""
+
+        #     details.append(
+        #         {
+        #             "api_param": api_param,
+        #             "field": field,
+        #             "input": err.get("input"),
+        #             "msg": err.get("msg"),
+        #         }
+        #     )
+
         details = [
             {
                 "api_param": err["loc"][0] or None,
