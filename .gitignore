@@ -1,4 +1,4 @@
-.env
+*.env*
 .venv
 __pycache__
 app/__pycache__
@@ -7,3 +7,5 @@ notes.txt
 *.log
 dump.rdb
 *.rdb
+.devcontainer
+.pytest_cache
