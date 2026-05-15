@@ -1,16 +1,63 @@
-A production-grade backend API built with FastAPI, designed to manage user authentication, authorization, and user-owned data in a secure and scalable way.
+# Research Paper Management System
 
-The system implements a complete authentication flow using JWT, including access and refresh tokens, secure password hashing, and protected routes. It enforces role-based and ownership-based access control, ensuring that users can only access or modify their own resources while administrators have elevated privileges.
+A production-grade backend system for managing and discovering
+ML research papers — built as an evolving architecture to solve
+real engineering problems at each phase.
 
-The API is structured using a clean architecture with clear separation of concerns (routers, services, repositories), and integrates PostgreSQL for persistent storage and Redis for rate limiting and caching.
+## Architecture Overview
 
-Key features include:
+[embed your Excalidraw diagram image here]
 
-* JWT-based authentication with refresh token support
-* Role-based and ownership-based authorization
-* Rate limiting to prevent abuse and brute-force attacks
-* Caching for optimized read performance
-* Structured error handling and validation
-* Dockerized environment for consistent deployment
+## Architectural Evolution
 
-The project is designed to reflect real-world backend systems, focusing on scalability, security, and maintainability rather than just feature implementation.
+### Phase 1 — Core API (v1-base-api)
+
+**The problem:** Needed a secure, structured foundation for
+managing research papers with proper access control.
+
+**What was built:**
+
+- REST API with FastAPI and PostgreSQL
+- JWT authentication with refresh token rotation
+- Role-based access control (user and admin roles)
+- Redis-backed rate limiting per IP
+- Dockerized environment — runs with one command
+
+**Key decisions:**
+
+- Raw SQL with asyncpg over an ORM — full query control
+  and better performance visibility
+- Separate access and refresh tokens — short-lived access
+  tokens reduce exposure if compromised
+
+---
+
+## Running the System
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+
+### Start everything
+
+\`\`\`bash
+git clone https://github.com/yourusername/research-api
+cd research-api
+cp .env.example .env
+docker compose up
+\`\`\`
+
+### Services
+
+| Service  | URL                        |
+| -------- | -------------------------- |
+| API      | http://localhost:8000      |
+| API Docs | http://localhost:8000/docs |
+
+## Tech Stack
+
+| Layer         | Technology          |
+| ------------- | ------------------- |
+| API           | FastAPI, Python     |
+| Database      | PostgreSQL, asyncpg |
+| Cache / Queue | Redis               |
