@@ -32,6 +32,10 @@ managing research papers with proper access control.
 
 ---
 
+## Current Architecture
+
+![Architecture](./assets/v1-arch.png)
+
 ## Running the System
 
 ### Prerequisites
