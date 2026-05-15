@@ -81,4 +81,3 @@ async def lifespan(app: FastAPI):
     if _pool:
         await _pool.close()
         logger.info("Database pool closed safely")
-

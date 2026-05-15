@@ -26,7 +26,11 @@ service = AuthService()
 
 @router.post("/register", tags=["register"])
 async def register_user(user_data: UserCreate, conn=Depends(get_conn)):
-    return await service.register(user_data=user_data, conn=conn)
+    data = await service.register(user_data=user_data, conn=conn)
+
+    return JSONResponse(
+        status_code=201, content=jsonable_encoder({"status": "success", "data": data})
+    )
 
 
 @router.post("/token", tags=["token"])
