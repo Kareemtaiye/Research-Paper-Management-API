@@ -6,7 +6,7 @@ real engineering problems at each phase.
 
 ## Architecture Overview
 
-[embed your Excalidraw diagram image here]
+[Complete Architecture diagram here later(when i complete the whole imple)]
 
 ## Architectural Evolution
 
@@ -34,7 +34,7 @@ managing research papers with proper access control.
 
 ## Current Architecture
 
-![Architecture](./assets/v1-arch.png)
+<img src="./assets/v1-arch.png" width="500" />
 
 ## Running the System
 
@@ -44,12 +44,10 @@ managing research papers with proper access control.
 
 ### Start everything
 
-\`\`\`bash
 git clone https://github.com/yourusername/research-api
 cd research-api
 cp .env.example .env
 docker compose up
-\`\`\`
 
 ### Services
 
