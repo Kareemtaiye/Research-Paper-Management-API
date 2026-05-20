@@ -7,12 +7,16 @@ services:
     depends_on:
       - postgres
       - redis
-    environment:
+    environment: #Will use seperate redis services in production for then
       - DATABASE_URL=postgresql://user:password@postgres:5432/app_db
-      - REDIS_URL=redis://redis:6379
+      - REDIS_CACHE_URL=${REDIS_CACHE_URL}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+    env_file:
+      - .env
     volumes:
       - .:/app
-    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app
 
   postgres:
     image: postgres:15
@@ -27,6 +31,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d # Initialize the db
+
   db_test:
     image: postgres:15
     container_name: postgres_db_test
@@ -46,6 +51,19 @@ services:
     container_name: redis_cache
     ports:
       - "6379:6379"
+
+  celery_worker:
+    build: .
+    depends_on:
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/app_db
+      - REDIS_CACHE_URL=${REDIS_CACHE_URL}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+    env_file:
+      - .env
+    command: celery -A app.tasks.celery_app.celery_app worker --loglevel=info
 
 volumes:
   postgres_data:
