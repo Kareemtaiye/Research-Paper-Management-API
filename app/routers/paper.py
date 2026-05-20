@@ -1,7 +1,6 @@
 from typing import Annotated, Any
-from venv import logger
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi import Response, status
@@ -11,13 +10,11 @@ from app.core.database import get_conn
 # from app.dependencies.permission import restricted_to
 from app.dependencies.user import get_current_user
 from app.dependencies.permission import RequireOwnerOrRole, RequireRole
-from app.exceptions.schemas import ErrorResponse
-from app.schemas.paper import PaperCreate, PaperOuputData
+from app.schemas.paper import PaperCreate, PaperResponse
 from app.schemas.request import ListQueryParams
 from app.schemas.response import ListResponse
 from app.schemas.user import UserOutput
 from app.services.paper_service import PaperService
-
 
 router = APIRouter(prefix="/papers", tags=["papers"])
 service = PaperService()
@@ -43,7 +40,7 @@ async def create_paper_entry(
         status_code=201,
         content={
             "status": "success",
-            "data": jsonable_encoder(PaperOuputData(**paper_entry)),
+            "data": jsonable_encoder(PaperResponse(**paper_entry)),
         },
     )
 
@@ -151,3 +148,12 @@ async def add_paper_tag(
         status_code=201,
         content={"status": "success", "message": "Tag added successfully"},
     )
+
+
+# ------ v2 features -------
+# @router.post("/import/arxiv", tags=["Arxiv-import"], response_model=PaperResponse)
+# async def upload_arxiv_paper(
+#     data: ArxivImportRequest,
+#     current_user: UserOutput = Depends(get_current_user),
+#     conn=Depends(get_conn),
+# ): ...

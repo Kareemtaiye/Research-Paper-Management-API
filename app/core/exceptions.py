@@ -18,6 +18,12 @@ class SessionNotFoundException(ResourceNotFoundException):
         super().__init__(session_id, "Session")
 
 
+# ----- v2 -----
+class TaskNotFoundException(ResourceNotFoundException):
+    def __init__(self, task_id: str):
+        super().__init__(task_id, "Task")
+
+
 # -------- V1 -------------
 # class PaperNotFoundException(Exception):
 #     def __init__(self, paper_id: str | UUID):
