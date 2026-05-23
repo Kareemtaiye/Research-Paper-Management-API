@@ -13,7 +13,7 @@ real engineering problems at each phase.
 ### Phase 1 — Core API (v1-base-api)
 
 **The problem:** Needed a secure, structured foundation for
-managing research papers with proper access control .
+managing research papers with proper access control.
 
 **What was built:**
 
