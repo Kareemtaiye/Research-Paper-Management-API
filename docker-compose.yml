@@ -8,7 +8,7 @@ services:
       - postgres
       - redis
     environment: #Will use seperate redis services in production for then
-      - DATABASE_URL=postgresql://user:password@postgres:5432/app_db
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_CACHE_URL=${REDIS_CACHE_URL}
       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
@@ -26,8 +26,8 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: app_db
-    # ports:
-    #   - "5432:5432"
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d # Initialize the db
