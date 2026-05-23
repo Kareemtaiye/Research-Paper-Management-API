@@ -101,12 +101,6 @@ docker compose up
 | API Docs      | http://localhost:8000/docs |
 | Flower        | http://localhost:5555      |
 | MailHog Inbox | http://localhost:8025      |
-| Service       | URL                        |
-| ------------- | -------------------------- |
-| API           | http://localhost:8000      |
-| API Docs      | http://localhost:8000/docs |
-| Flower        | http://localhost:5555      |
-| MailHog Inbox | http://localhost:8025      |
 
 ## Tech Stack
 
