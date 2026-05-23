@@ -7,13 +7,14 @@ real engineering problems at each phase.
 ## Architecture Overview
 
 [Complete Architecture diagram here later(when i complete the whole imple)]
+[Complete Architecture diagram here later(when i complete the whole imple)]
 
 ## Architectural Evolution
 
 ### Phase 1 — Core API (v1-base-api)
 
 **The problem:** Needed a secure, structured foundation for
-managing research papers with proper access control.
+managing research papers with proper access control .
 
 **What was built:**
 
@@ -88,11 +89,18 @@ immediately and polls for completion.
 
 git clone https://github.com/yourusername/research-api
 cd research_paper_management_api
+cd research_paper_management_api
 cp .env.example .env
 docker compose up
 
 ### Services
 
+| Service       | URL                        |
+| ------------- | -------------------------- |
+| API           | http://localhost:8000      |
+| API Docs      | http://localhost:8000/docs |
+| Flower        | http://localhost:5555      |
+| MailHog Inbox | http://localhost:8025      |
 | Service       | URL                        |
 | ------------- | -------------------------- |
 | API           | http://localhost:8000      |
@@ -111,6 +119,30 @@ docker compose up
 | Worker Monitoring | Flower              |
 | Email (local)     | MailHog             |
 | Containerization  | Docker Compose      |
+
+## Key Engineering Decisions
+
+- **No ORM** — raw SQL with asyncpg gives full query visibility
+  and control. Complex queries stay clean without fighting an
+  abstraction layer.
+- **Redis dual role** — serves as both cache/rate limiter (Phase 1)
+  and message broker/result backend (Phase 2). One less service
+  to operate.
+- **Extensible import architecture** — import sources live under
+  /papers/import/{source}. Adding Semantic Scholar or DOI lookup
+  never touches existing endpoints.
+- **Migration tracking** — schema_migrations table ensures
+  migrations run exactly once regardless of container restarts
+  or volume resets.
+  | Layer | Technology |
+  | ----------------- | ------------------- |
+  | API | FastAPI, Python |
+  | Database | PostgreSQL, asyncpg |
+  | Cache / Queue | Redis |
+  | Background Tasks | Celery |
+  | Worker Monitoring | Flower |
+  | Email (local) | MailHog |
+  | Containerization | Docker Compose |
 
 ## Key Engineering Decisions
 
