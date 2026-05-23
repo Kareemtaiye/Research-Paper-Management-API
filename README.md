@@ -77,7 +77,7 @@ immediately and polls for completion.
 
 ## Current Architecture
 
-<img src="./assets/v2-arch.png" width="500" />
+<img src="./assets/v2-arch.png" width="800" />
 
 ## Running the System
 
