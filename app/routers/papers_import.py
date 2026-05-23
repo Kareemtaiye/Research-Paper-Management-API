@@ -55,7 +55,9 @@ async def upload_arxiv_paper(
     paper_entry = await service.create_arxiv_paper_entry(conn=conn, data=entry_data)
 
     # Start backgorund task to fetch metadata from Arxiv
-    task = fetch_arxiv_paper_metadata.delay(paper_entry["id"], arxiv_id)
+    task = fetch_arxiv_paper_metadata.delay(
+        paper_entry["id"], arxiv_id, current_user.id
+    )
 
     # Update paper entry with task id for tracking
     await service.update_paper_task_id(

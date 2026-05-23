@@ -15,3 +15,4 @@ httpx
 asgi-lifespan
 celery
 flower
+psycopg2-binary
