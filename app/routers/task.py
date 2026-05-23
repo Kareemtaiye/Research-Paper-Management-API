@@ -30,6 +30,12 @@ async def get_task_status(
 
     task = AsyncResult(task_id, app=celery_app)
 
+    # if task.state == "PENDING" and not celery_app.backend.get(task.id):
+    #     return JSONResponse(
+    #         status_code=404,
+    #         content={"status": "error", "message": "Task not found"},
+    #     )
+
     print(dict(paper_row))
 
     return JSONResponse(
@@ -45,7 +51,7 @@ async def get_task_status(
                         title=paper_row["title"],
                     )
                 ),
-                "celery_status": task.status,
+                # "celery_status": task.status,
             },
         },
     )

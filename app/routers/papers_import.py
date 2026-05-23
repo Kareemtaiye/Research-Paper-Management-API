@@ -62,6 +62,8 @@ async def upload_arxiv_paper(
         conn=conn, paper_id=paper_entry["id"], task_id=task.id
     )
 
+    print(task.id, "Task: id")
+
     # Return immediately
     return JSONResponse(
         status_code=status.HTTP_202_ACCEPTED,

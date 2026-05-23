@@ -7,8 +7,9 @@ services:
     depends_on:
       - postgres
       - redis
+      - migrate # wait for migrations before starting
     environment: #Will use seperate redis services in production for then
-      - DATABASE_URL=postgresql://user:password@postgres:5432/app_db
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_CACHE_URL=${REDIS_CACHE_URL}
       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
@@ -26,8 +27,8 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: app_db
-    # ports:
-    #   - "5432:5432"
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d # Initialize the db
@@ -57,13 +58,27 @@ services:
     depends_on:
       - redis
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/app_db
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_CACHE_URL=${REDIS_CACHE_URL}
       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
     env_file:
       - .env
     command: celery -A app.tasks.celery_app.celery_app worker --loglevel=info
+
+  migrate:
+    image: postgres:15 # use this instead of build: .
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    env_file:
+      - .env
+    volumes:
+      - ./migrations:/migrations
+      - ./scripts/migrate.sh:/migrate.sh
+    command: bash /migrate.sh
+    restart: "no" # runs once and exits
 
 volumes:
   postgres_data:
