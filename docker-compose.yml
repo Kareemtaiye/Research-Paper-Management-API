@@ -32,6 +32,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d # Initialize the db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d app_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   db_test:
     image: postgres:15
@@ -69,7 +74,8 @@ services:
   migrate:
     image: postgres:15 # use this instead of build: .
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy # wait until healthcheck passes
     environment:
       - DATABASE_URL=${DATABASE_URL}
     env_file:
@@ -79,6 +85,13 @@ services:
       - ./scripts/migrate.sh:/migrate.sh
     command: bash /migrate.sh
     restart: "no" # runs once and exits
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog
+    ports:
+      - "1025:1025" # SMTP port — your app sends emails here
+      - "8025:8025" # Web UI — you view caught emails here
 
 volumes:
   postgres_data:

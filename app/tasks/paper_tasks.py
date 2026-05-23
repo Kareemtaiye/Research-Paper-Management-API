@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 from app.tasks.celery_app import celery_app
 from app.core.config import settings
 from app.core.logger import logger
+from app.tasks.email_tasks import send_paper_notification
 
 
 def parse_arxiv_datetime(val: str | date | datetime) -> datetime:
@@ -28,7 +29,7 @@ NAMESPACE = {"atom": "http://www.w3.org/2005/Atom"}
 
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
-def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str):
+def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str, owner_id: str):
     """Sync wrapper to to run async arxiv logic."""
 
     async def run_fetch() -> dict:
@@ -119,6 +120,9 @@ def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str):
             )
 
             logger.info(f"Fetched metadata for paper {paper_id} from Arxiv: {title}")
+
+            # Chain email notification
+            send_paper_notification.delay(owner_id, paper_id)
 
             return {"status": "completed", "title": title, "paper_id": paper_id}
         except Exception as exc:
