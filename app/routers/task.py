@@ -45,7 +45,7 @@ async def get_task_status(
                         title=paper_row["title"],
                     )
                 ),
-                "celery_status": task.status,
+                # "celery_status": task.status,
             },
         },
     )
