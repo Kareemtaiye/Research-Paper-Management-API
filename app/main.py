@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from app.core.database import lifespan
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.request_logs import RequestLoggingMiddleware
-from app.routers import auth, papers_import, task, user, paper, tag
+from app.routers import auth, papers_import, task, user, paper, tag, websocket
 from app.exceptions.handlers import register_exception_handlers
 from app.tasks.paper_tasks import test_task
 
@@ -29,6 +29,7 @@ app.include_router(paper.router)
 app.include_router(papers_import.router)
 app.include_router(tag.router)
 app.include_router(task.router)
+app.include_router(websocket.router)
 
 
 @app.get("/", tags=["index"])
