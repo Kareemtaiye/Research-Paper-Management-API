@@ -73,11 +73,34 @@ waiting for external data. Bulk imports timed out completely.
 2-3 seconds synchronous wait to ~50ms. Client receives task_id
 immediately and polls for completion.
 
----
-
 ## Current Architecture
 
 <img src="./assets/v2-arch.png" width="800" />
+
+---
+
+### Phase 3 — Real-Time Notifications (v3-websockets)
+
+**The problem:** Clients had to poll /tasks/{task_id} repeatedly
+to know when paper processing completed. Inefficient and added
+unnecessary API load.
+
+**What was added:**
+
+- WebSocket endpoint at /ws/{user_id}
+- Redis Pub/Sub for broadcasting across server instances
+- JWT authentication over WebSocket via query parameter
+- Celery worker publishes completion events to Redis
+- Client receives instant push notification on completion
+
+**Result:** Eliminated polling entirely. Clients receive
+notifications within milliseconds of task completion.
+
+## Current Architecture
+
+<img src="./assets/v3-arch.png" width="880" />
+
+---
 
 ## Running the System
 
