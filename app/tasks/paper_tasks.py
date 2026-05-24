@@ -86,17 +86,6 @@ def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str, owner_id: str
                 )
             ]
 
-            print(
-                "fetched data: ",
-                {
-                    "title": title,
-                    "abstract": abstract,
-                    "authors": authors,
-                    "categories": categories,
-                    "published": published,
-                },
-            )
-
             published_at = parse_arxiv_datetime(published)
 
             # Store enriched data
@@ -122,19 +111,19 @@ def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str, owner_id: str
 
             logger.info(f"Fetched metadata for paper {paper_id} from Arxiv: {title}")
 
-            # # Chain email notification
-            # send_paper_notification.delay(owner_id, paper_id)
-
             # Publish event
             await pubsub_manager.publish(
                 owner_id,
                 {
                     "event": "paper_completed",
-                    "paper_id": paper_id,
+                    "paper_id": str(paper_id),
                     "title": title,
                     "status": "completed",
                 },
             )
+
+            # Chain email notification
+            send_paper_notification.delay(owner_id, paper_id)
 
             return {"status": "completed", "title": title, "paper_id": paper_id}
         except Exception as exc:
