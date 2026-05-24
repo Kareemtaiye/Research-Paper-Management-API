@@ -1,9 +1,21 @@
 services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_gateway
+    ports:
+      - "80:80" # only Nginx is publicly exposed
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    restart: always
+
   app:
     build: .
     container_name: fastapi_app
-    ports:
-      - "8000:8000"
+    # ports: remove host port exposure
+    #   - "8000:8000"   # FastAPI is still reachable inside Docker as app:8000 But nobody outside Docker can hit it directly anymore
+
     depends_on:
       - postgres
       - redis
