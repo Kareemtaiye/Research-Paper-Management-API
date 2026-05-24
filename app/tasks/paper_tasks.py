@@ -8,6 +8,7 @@ from app.tasks.celery_app import celery_app
 from app.core.config import settings
 from app.core.logger import logger
 from app.tasks.email_tasks import send_paper_notification
+from app.services.pubsub import pubsub_manager
 
 
 def parse_arxiv_datetime(val: str | date | datetime) -> datetime:
@@ -121,8 +122,19 @@ def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str, owner_id: str
 
             logger.info(f"Fetched metadata for paper {paper_id} from Arxiv: {title}")
 
-            # Chain email notification
-            send_paper_notification.delay(owner_id, paper_id)
+            # # Chain email notification
+            # send_paper_notification.delay(owner_id, paper_id)
+
+            # Publish event
+            await pubsub_manager.publish(
+                owner_id,
+                {
+                    "event": "paper_completed",
+                    "paper_id": paper_id,
+                    "title": title,
+                    "status": "completed",
+                },
+            )
 
             return {"status": "completed", "title": title, "paper_id": paper_id}
         except Exception as exc:
