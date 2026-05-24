@@ -42,3 +42,18 @@ def generate_refresh_token():
 
 def verify_jwt(token: str):
     return jwt.decode(token, settings.secret_key, algorithms=["HS256"])
+
+
+def verify_websocket_token(token: str, user_id: str):
+    """
+    Validates JWT token for WebSocket connection.
+    Returns True if valid and belongs to user_id.
+    Returns False otherwise.
+    """
+
+    try:
+        payload = verify_jwt(token)
+        token_user_id = payload.get("sub")
+        return token_user_id == user_id
+    except Exception:
+        return False  # Might be invalid token or jwt exp err
