@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     redis_cache_url: str
     celery_broker_url: str
     celery_result_backend: str
+    redis_pubsub_url: str
 
     # Pydantic will automatically cast these strings from the env to integers
     access_token_expire_minutes: int = 15
