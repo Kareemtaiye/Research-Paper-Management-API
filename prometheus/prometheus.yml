@@ -1,0 +1,15 @@
+# prometheus/prometheus.yml
+global:
+  scrape_interval: 15s #Scrapes every 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "fastapi"
+    static_configs:
+      - targets: ["app:8000"] # the FastAPI container
+    metrics_path: "/metrics"
+
+  # (later)
+  # - job_name: "nginx"
+  #   static_configs:
+  #     - targets: ["nginx:9113"] #nginx exporter (optional for now)

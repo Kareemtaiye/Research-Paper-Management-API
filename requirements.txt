@@ -16,3 +16,5 @@ asgi-lifespan
 celery
 flower
 psycopg2-binary
+prometheus-fastapi-instrumentator
+python-json-logger

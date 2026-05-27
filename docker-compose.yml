@@ -105,6 +105,43 @@ services:
       - "1025:1025" # SMTP port — your app sends emails here
       - "8025:8025" # Web UI — you view caught emails here
 
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090" # UI at localhost:9090
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - app
+    restart: always
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000" # dashboard UI at localhost:3000
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: always
+
+  # (later)
+  # nginx-exporter:
+  #   image: nginx/nginx-prometheus-exporter:0.11.0
+  #   container_name: nginx_exporter
+  #   command:
+  #     - -nginx.scrape-uri=http://nginx:80/nginx_status
+  #   ports:
+  #     - "9113:9113"
+  #   depends_on:
+  #     - nginx
+  #   restart: always
+
 volumes:
   postgres_data:
   postgres_test_data:
+  grafana_data:
