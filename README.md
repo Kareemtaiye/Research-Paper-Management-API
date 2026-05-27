@@ -102,6 +102,30 @@ notifications within milliseconds of task completion.
 
 ---
 
+### Phase 4 — Gateway & Observability (v4-gateway)
+
+**The problem:** No visibility into system behavior. FastAPI
+exposed directly — no centralized traffic control.
+
+**What was added:**
+
+- Nginx reverse proxy as single entry point
+- Gateway-level rate limiting per IP
+- WebSocket proxying with upgrade headers
+- Correlation IDs injected by Nginx, traced through all logs
+- Prometheus scraping /metrics every 15 seconds
+- Grafana dashboards — request rate, P95 latency, error rate
+- Structured JSON logging with real IP resolution
+
+**Result:** Complete visibility into system behavior.
+Single entry point for all traffic.
+
+## Current Architecture
+
+<img src="./assets/v4-arch.png" width="880" />
+
+---
+
 ## Running the System
 
 ### Prerequisites
