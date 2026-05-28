@@ -4,9 +4,19 @@ A production-grade backend system for managing and discovering
 ML research papers — built as an evolving architecture to solve
 real engineering problems at each phase.
 
+## Features
+
+- JWT authentication with refresh token rotation
+- Role-based access control (user and admin roles)
+- Arxiv paper import with background metadata fetching
+- Real-time WebSocket notifications on task completion
+- Full-text search with relevance ranking and fuzzy matching
+- Structured JSON logging with correlation ID tracing
+- Prometheus metrics and Grafana dashboards
+- Nginx gateway with IP-based rate limiting
+
 ## Architecture Overview
 
-[Complete Architecture diagram here later(when i complete the whole imple)]
 [Complete Architecture diagram here later(when i complete the whole imple)]
 
 ## Architectural Evolution
@@ -126,6 +136,31 @@ Single entry point for all traffic.
 
 ---
 
+### Phase 5 — Full-Text Search (v5-search)
+
+**The problem:** PostgreSQL ILIKE queries were slow and couldn't
+rank results by relevance. Searching "transformer architecture"
+missed relevant papers whose titles didn't contain exact terms.
+
+**What was added:**
+
+- Elasticsearch for full-text search across title, abstract, authors
+- Field boosting — title matches rank higher than abstract matches
+- Fuzzy matching — typos handled automatically
+- Category and date range filters
+- Result highlighting — shows exactly why each result matched
+- Async Celery sync worker — keeps Elasticsearch consistent with PostgreSQL
+- Papers removed from Elasticsearch when deleted from PostgreSQL
+
+**Result:** Sub-millisecond search across all papers with
+intelligent relevance ranking. Typo-tolerant and multi-field.
+
+## Current Architecture
+
+<img src="./assets/v5-arch.png" width="900" />
+
+---
+
 ## Running the System
 
 ### Prerequisites
@@ -147,19 +182,26 @@ docker compose up
 | API           | http://localhost:8000      |
 | API Docs      | http://localhost:8000/docs |
 | Flower        | http://localhost:5555      |
-| MailHog Inbox | http://localhost:8025      |
+| MailHog       | http://localhost:8025      |
+| Grafana       | http://localhost:3000      |
+| Prometheus    | http://localhost:9090      |
+| Elasticsearch | http://localhost:9200      |
 
 ## Tech Stack
 
-| Layer             | Technology          |
-| ----------------- | ------------------- |
-| API               | FastAPI, Python     |
-| Database          | PostgreSQL, asyncpg |
-| Cache / Queue     | Redis               |
-| Background Tasks  | Celery              |
-| Worker Monitoring | Flower              |
-| Email (local)     | MailHog             |
-| Containerization  | Docker Compose      |
+| Layer             | Technology                |
+| ----------------- | ------------------------- |
+| API               | FastAPI, Python           |
+| Database          | PostgreSQL, asyncpg       |
+| Cache / Queue     | Redis                     |
+| Background Tasks  | Celery                    |
+| Worker Monitoring | Flower                    |
+| Real-Time         | WebSockets, Redis Pub/Sub |
+| Gateway           | Nginx                     |
+| Metrics           | Prometheus, Grafana       |
+| Search            | Elasticsearch             |
+| Email (local)     | MailHog                   |
+| Containerization  | Docker Compose            |
 
 ## Key Engineering Decisions
 
@@ -193,9 +235,28 @@ docker compose up
 - **Redis dual role** — serves as both cache/rate limiter (Phase 1)
   and message broker/result backend (Phase 2). One less service
   to operate.
+
 - **Extensible import architecture** — import sources live under
   /papers/import/{source}. Adding Semantic Scholar or DOI lookup
   never touches existing endpoints.
 - **Migration tracking** — schema_migrations table ensures
   migrations run exactly once regardless of container restarts
   or volume resets.
+
+- **Redis triple role** — cache/rate limiter (Phase 1),
+  message broker/result backend (Phase 2), Pub/Sub
+  for WebSocket notifications (Phase 3). One service,
+  three responsibilities.
+
+- **WebSocket auth via query parameter** — browser WebSocket
+  API doesn't support custom headers. JWT passed as query
+  parameter and validated before connection is accepted.
+
+- **Elasticsearch eventual consistency** — PostgreSQL is
+  source of truth. Elasticsearch synced asynchronously via
+  Celery. If Elasticsearch goes down, sync tasks requeue
+  on recovery. Nothing lost.
+
+- **Correlation IDs** — injected by Nginx on every request,
+  traced through FastAPI logs and Celery tasks. Any request
+  can be fully reconstructed across all services from one ID.
