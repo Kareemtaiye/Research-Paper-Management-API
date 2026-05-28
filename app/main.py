@@ -5,10 +5,10 @@ from app.middleware.request_logs import (
     # RequestLoggingMiddleware,
     add_logger_middleware,
 )
-from app.routers import auth, papers_import, task, user, paper, tag, websocket
+from app.routers import auth, papers_import, task, user, paper, tag, websocket, search
 from app.exceptions.handlers import register_exception_handlers
+from app.services.search_service import create_index_if_not_exists
 from app.tasks.paper_tasks import test_task
-
 from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI(lifespan=lifespan)
@@ -30,13 +30,14 @@ app.add_middleware(RateLimitMiddleware)
 # app.add_middleware(RequestLoggingMiddleware)
 add_logger_middleware(app)
 
-app.include_router(auth.router)
-app.include_router(user.router)
-app.include_router(paper.router)
-app.include_router(papers_import.router)
-app.include_router(tag.router)
-app.include_router(task.router)
-app.include_router(websocket.router)
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(user.router, prefix="/api/v1")
+app.include_router(search.router, prefix="/api/v1")
+app.include_router(paper.router, prefix="/api/v1")
+app.include_router(papers_import.router, prefix="/api/v1")
+app.include_router(tag.router, prefix="/api/v1")
+app.include_router(task.router, prefix="/api/v1")
+app.include_router(websocket.router, prefix="/api/v1")
 
 
 @app.get("/", tags=["index"])

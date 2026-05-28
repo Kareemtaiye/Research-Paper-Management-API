@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.core.logger import logger
 from app.tasks.email_tasks import send_paper_notification
 from app.services.pubsub import pubsub_manager
+from app.tasks.search_tasks import sync_paper_to_elasticsearch
 
 
 def parse_arxiv_datetime(val: str | date | datetime) -> datetime:
@@ -110,6 +111,8 @@ def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str, owner_id: str
             )
 
             logger.info(f"Fetched metadata for paper {paper_id} from Arxiv: {title}")
+
+            sync_paper_to_elasticsearch.delay(paper_id)
 
             # Publish event
             await pubsub_manager.publish(

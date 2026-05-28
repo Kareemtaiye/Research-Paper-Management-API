@@ -18,3 +18,5 @@ flower
 psycopg2-binary
 prometheus-fastapi-instrumentator
 python-json-logger
+elasticsearch==8.13.0
+aiohttp

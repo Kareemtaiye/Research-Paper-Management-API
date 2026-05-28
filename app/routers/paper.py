@@ -15,6 +15,7 @@ from app.schemas.request import ListQueryParams
 from app.schemas.response import ListResponse
 from app.schemas.user import UserOutput
 from app.services.paper_service import PaperService
+from app.tasks.search_tasks import remove_paper_from_elasticsearch
 
 router = APIRouter(prefix="/papers", tags=["papers"])
 service = PaperService()
@@ -132,6 +133,9 @@ async def delete_paper(
     #     )
 
     await service.delete_paper(conn=conn, id=paper["id"])
+
+    # After deleting from PostgreSQL
+    remove_paper_from_elasticsearch.delay(paper["id"])
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

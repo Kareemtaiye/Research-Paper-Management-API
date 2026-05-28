@@ -17,9 +17,12 @@ services:
     #   - "8000:8000"   # FastAPI is still reachable inside Docker as app:8000 But nobody outside Docker can hit it directly anymore
 
     depends_on:
-      - postgres
-      - redis
-      - migrate # wait for migrations before starting
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment: #Will use seperate redis services in production for then
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_CACHE_URL=${REDIS_CACHE_URL}
@@ -69,6 +72,12 @@ services:
     container_name: redis_cache
     ports:
       - "6379:6379"
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   celery_worker:
     build: .
@@ -129,6 +138,19 @@ services:
       - prometheus
     restart: always
 
+  elasticsearch:
+    image: elasticsearch:8.13.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    restart: always
+
   # (later)
   # nginx-exporter:
   #   image: nginx/nginx-prometheus-exporter:0.11.0
@@ -145,3 +167,4 @@ volumes:
   postgres_data:
   postgres_test_data:
   grafana_data:
+  elasticsearch_data:

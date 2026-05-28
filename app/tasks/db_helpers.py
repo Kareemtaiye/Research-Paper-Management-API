@@ -29,7 +29,7 @@ def get_paper_by_id(paper_id: str):
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT id, title, authors, arxiv_url, published_at FROM papers WHERE id = %s
+                SELECT id, owner_id, title, authors, arxiv_url, published_at FROM papers WHERE id = %s
                 """,
                 (str(paper_id),),
             )
@@ -37,10 +37,11 @@ def get_paper_by_id(paper_id: str):
             if row:
                 return {
                     "id": str(row[0]),
-                    "title": row[1],
-                    "authors": row[2],
-                    "arxiv_url": row[3],
-                    "published_at": row[4],
+                    "owner_id": str(row[1]),
+                    "title": row[2],
+                    "authors": row[3],
+                    "arxiv_url": row[4],
+                    "published_at": row[5],
                 }
             return None
     finally:

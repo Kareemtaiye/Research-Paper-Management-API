@@ -5,6 +5,8 @@ import asyncpg
 from fastapi import FastAPI
 from app.core.config import settings
 from app.core.logger import logger
+from app.core.elasticsearch import es_client
+from app.services.search_service import create_index_if_not_exists
 
 _pool = None
 
@@ -45,8 +47,9 @@ def with_connection(func):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Manages the startup and shutdown of the database pool."""
+    """Manages the startup and shutdown of the database pool and Elastic search(added later)."""
 
+    # 1. POSTGRES STARTUP
     max_retry = 5
     delay = 1
 
@@ -74,6 +77,28 @@ async def lifespan(app: FastAPI):
             )
             await asyncio.sleep(delay)
             delay *= 2  # Expon Backoff
+
+    # 2. ELASTICSEARCH STARTUP
+    es_retry = 10
+    es_delay = 2
+
+    for attempt in range(1, es_retry + 1):
+        try:
+            logger.info(f"Connecting to Elasticsearch ({attempt}/{es_retry})...")
+
+            if await es_client.ping():
+                await create_index_if_not_exists()
+                logger.info("Elasticsearch ready + index verified")
+                break
+
+        except Exception as e:
+            logger.warning(f"Elasticsearch not ready: {e}")
+
+        if attempt == es_retry:
+            logger.critical("Elasticsearch failed permanently")
+            raise RuntimeError("ES startup failed")
+
+        await asyncio.sleep(es_delay)
 
     yield  # Pauses or suspends the function at this point, while the app runs
 
