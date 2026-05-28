@@ -1,3 +1,5 @@
+import asyncio
+
 import redis.asyncio as redis
 import json
 from app.core.config import settings
@@ -15,17 +17,44 @@ class PubSubManager:
         # publish event to user's channel
         await self.redis_client.publish(f"user:{user_id}", json.dumps(data))
 
+    # async def subscribe(self, user_id: str):
+    #     # subscribe to user's channel
+    #     pubsub_obj = self.redis_client.pubsub()
+    #     await pubsub_obj.subscribe(f"user:{user_id}")
+
+    #     try:
+    #         async for message in pubsub_obj.listen():
+    #             if message["type"] == "message":
+    #                 yield json.loads((message["data"]))
+    #     finally:
+    #         await pubsub_obj.unsubscribe(f"user:{user_id}")
+    #         await pubsub_obj.close()
+
     async def subscribe(self, user_id: str):
-        # subscribe to user's channel
         pubsub_obj = self.redis_client.pubsub()
-        await pubsub_obj.subscribe(f"user:{user_id}")
+        channel = f"user:{user_id}"
+
+        await pubsub_obj.subscribe(channel)
 
         try:
-            async for message in pubsub_obj.listen():
-                if message["type"] == "message":
-                    yield json.loads((message["data"]))
+            while True:
+                try:
+                    message = await pubsub_obj.get_message(
+                        ignore_subscribe_messages=True, timeout=1.0
+                    )
+
+                    if message:
+                        yield json.loads(message["data"])
+
+                    await asyncio.sleep(0.01)
+
+                except Exception as e:
+                    print("PubSub error:", e)
+                    await asyncio.sleep(1)
+                    continue
+
         finally:
-            await pubsub_obj.unsubscribe(f"user:{user_id}")
+            await pubsub_obj.unsubscribe(channel)
             await pubsub_obj.close()
 
 

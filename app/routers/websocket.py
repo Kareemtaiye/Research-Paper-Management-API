@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, status
 from app.core.security import verify_websocket_token
+from app.services.streams import stream_manager
+
 from app.services.pubsub import pubsub_manager
 from app.core.logger import logger
 
@@ -17,8 +19,13 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str = Qu
     try:
         async for message in pubsub_manager.subscribe(user_id):
             await websocket.send_json(message)
+
+        # async for message in stream_manager.subscribe(user_id):
+        #     await websocket.send_json(message)
     except WebSocketDisconnect:
+        print(f"User {user_id} disconnected from WebSocket")
         pass  # client disconnect cleanly
+
     except Exception as exc:
         logger.exception(f"Websocket error for user {user_id}: {exc}")
         await websocket.close()
