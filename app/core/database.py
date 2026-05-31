@@ -2,13 +2,16 @@ import asyncio
 from contextlib import asynccontextmanager
 from functools import wraps
 import asyncpg
+from elasticsearch import AsyncElasticsearch
 from fastapi import FastAPI
 from app.core.config import settings
 from app.core.logger import logger
-from app.core.elasticsearch import es_client
+from app.core.elasticsearch import ES_URL
 from app.services.search_service import create_index_if_not_exists
 
 _pool = None
+DB_URL = settings.prod_database_url if settings.is_production else settings.database_url
+es_client = None
 
 
 async def get_pool():
@@ -59,9 +62,7 @@ async def lifespan(app: FastAPI):
         try:
             logger.info(f"Connecting to Postgres DB ({attempt}/{max_retry})...")
             # Initialize the pool once on startup
-            _pool = await asyncpg.create_pool(
-                dsn=settings.database_url, max_size=20, ssl=None
-            )
+            _pool = await asyncpg.create_pool(dsn=DB_URL, max_size=20, ssl=None)
 
             logger.info("Database pool created successfully")
             break  # End loop if successful
@@ -86,6 +87,11 @@ async def lifespan(app: FastAPI):
         try:
             logger.info(f"Connecting to Elasticsearch ({attempt}/{es_retry})...")
 
+            # asyncio creates a fresh event loop and close it later. a globally-created async client stays attached to the old closed loop
+            # later requests crash with
+            global es_client
+            es_client = AsyncElasticsearch([ES_URL])
+
             if await es_client.ping():
                 await create_index_if_not_exists()
                 logger.info("Elasticsearch ready + index verified")
@@ -103,6 +109,9 @@ async def lifespan(app: FastAPI):
     yield  # Pauses or suspends the function at this point, while the app runs
 
     # cleanup on shutdown
+    if es_client:
+        await es_client.close()
+
     if _pool:
         await _pool.close()
         logger.info("Database pool closed safely")

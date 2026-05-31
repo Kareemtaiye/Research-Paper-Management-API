@@ -2,8 +2,13 @@ import redis.asyncio as redis
 import json
 import asyncio
 from app.core.config import settings
+from app.core.logger import logger
 
-REDIS_PUBSUB_URL = settings.redis_pubsub_url or "redis://redis:6379/3"
+REDIS_PUBSUB_URL = (
+    settings.prod_redis_pubsub_url
+    if settings.is_production
+    else (settings.redis_pubsub_url or "redis://redis:6379/3")
+)
 
 
 class PubSubManager:
@@ -14,6 +19,7 @@ class PubSubManager:
 
     async def publish(self, user_id: str, data: dict):
         # publish event to user's channel
+        # logger.info(f"Loop ID: {id(asyncio.get_running_loop())}")
         await self.redis_client.publish(f"user:{user_id}", json.dumps(data))
 
     # async def subscribe(self, user_id: str):

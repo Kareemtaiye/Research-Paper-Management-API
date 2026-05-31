@@ -20,3 +20,5 @@ prometheus-fastapi-instrumentator
 python-json-logger
 elasticsearch==8.13.0
 aiohttp
+resend
+jinja2

@@ -1,35 +1,12 @@
-# from elasticsearch import AsyncElasticsearch
-# import os
+from elasticsearch import AsyncElasticsearch
 
-# ES_URL = os.getenv("ELASTICSEARCH_URL", "http://elasticsearch:9200")
-
-# PAPER_INDEX = "papers"
-
-# es_client = AsyncElasticsearch([ES_URL])
-
-# # Index mapping — defines the structure of the papers in Elasticsearch
-# PAPERS_MAPPING = {
-#     "mappings": {
-#         "properties": {
-#             "paper_id": {"type": "keyword"},  # exact match only
-#             "owner_id": {"type": "keyword"},
-#             "title": {"type": "text", "analyzer": "english"},
-#             "abstract": {"type": "text", "analyzer": "english"},
-#             "authors": {"type": "text", "analyzer": "english"},
-#             "categories": {"type": "keyword"},
-#             "arxiv_url": {"type": "keyword"},
-#             "published_at": {"type": "date"},
-#             "status": {"type": "keyword"},
-#         }
-#     }
-# }
-
-
-from app.core.elasticsearch import PAPER_INDEX, es_client, PAPERS_MAPPING
+from app.core.elasticsearch import PAPER_INDEX, ES_URL, PAPERS_MAPPING
 
 
 async def create_index_if_not_exists():
     """Create the papers index if it doesn't exist."""
+    es_client = AsyncElasticsearch([ES_URL])
+
     exists = await es_client.indices.exists(index=PAPER_INDEX)
     if not exists:
         await es_client.indices.create(index=PAPER_INDEX, body=PAPERS_MAPPING)
@@ -37,6 +14,8 @@ async def create_index_if_not_exists():
 
 async def index_paper(paper: dict):
     """Add or update a paper in Elasticsearch."""
+    es_client = AsyncElasticsearch([ES_URL])
+
     await es_client.index(
         index=PAPER_INDEX,
         id=paper["id"],  # PostgreSQL UUID as ES document ID
@@ -56,6 +35,7 @@ async def index_paper(paper: dict):
 
 async def delete_paper(paper_id: str):
     """Remove a paper from Elasticsearch."""
+    es_client = AsyncElasticsearch([ES_URL])
     await es_client.delete(
         index=PAPER_INDEX, id=paper_id, ignore=[404]  # don't error if already gone
     )
@@ -70,6 +50,8 @@ async def search_papers(
     from_date: str | None = None,
 ):
     """Search papers with relevance ranking."""
+
+    es_client = AsyncElasticsearch([ES_URL])
 
     # Base query — multi-field with boosting
     must_query = {
@@ -121,4 +103,5 @@ async def search_papers(
 
 
 async def get_all_es_papers():
+    es_client = AsyncElasticsearch([ES_URL])
     return await es_client.search(index=PAPER_INDEX, query={"match_all": {}})

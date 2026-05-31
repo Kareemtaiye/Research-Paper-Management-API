@@ -1,11 +1,10 @@
 from elasticsearch import AsyncElasticsearch
 import os
+from app.core.config import settings
 
-ES_URL = os.getenv("ELASTICSEARCH_URL", "http://elasticsearch:9200")
+ES_URL = settings.prod_es_url if settings.is_production else settings.es_url
 
 PAPER_INDEX = "papers"
-
-es_client = AsyncElasticsearch([ES_URL])
 
 # Index mapping — defines the structure of the papers in Elasticsearch
 PAPERS_MAPPING = {

@@ -28,6 +28,8 @@ services:
       - REDIS_CACHE_URL=${REDIS_CACHE_URL}
       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+      - ENV=${ENV}
+      - PROD_DATABASE_URL=${PROD_DATABASE_URL}
     env_file:
       - .env
     volumes:

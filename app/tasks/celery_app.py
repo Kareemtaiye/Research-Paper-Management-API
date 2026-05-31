@@ -6,8 +6,16 @@ from app.core.config import settings
 
 celery_app = Celery(
     "research_api",
-    broker=settings.celery_broker_url,  # Redis receives the tasks
-    backend=settings.celery_result_backend,  # Redis stores the results
+    broker=(
+        settings.prod_celery_broker_url  # Receives the task
+        if settings.is_production
+        else settings.celery_broker_url
+    ),
+    backend=(
+        settings.prod_celery_result_backend  # Stores the result of the task
+        if settings.is_production
+        else settings.celery_result_backend
+    ),
     include=[
         "app.tasks.paper_tasks",
         "app.tasks.email_tasks",

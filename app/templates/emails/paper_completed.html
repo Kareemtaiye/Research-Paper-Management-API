@@ -1,0 +1,33 @@
+<!-- app/templates/emails/paper_completed.html -->
+{% extends "emails/base.html" %} {% block content %}
+<p>Hi there,</p>
+<p>Your paper has been successfully imported and is ready to view.</p>
+
+<span class="status-badge status-completed">✓ Import Complete</span>
+
+<div class="field">
+  <div class="field-label">Title</div>
+  <div class="field-value">{{ title }}</div>
+</div>
+
+<div class="field">
+  <div class="field-label">Authors</div>
+  <div class="field-value">{{ authors }}</div>
+</div>
+
+<div class="field">
+  <div class="field-label">Published</div>
+  <div class="field-value">{{ published_at }}</div>
+</div>
+
+<div class="field">
+  <div class="field-label">Categories</div>
+  <div class="field-value">{{ categories }}</div>
+</div>
+
+<p style="margin-top: 24px; color: #6b7280; font-size: 14px">
+  {{ abstract[:300] }}{% if abstract|length > 300 %}...{% endif %}
+</p>
+
+<a href="{{ arxiv_url }}" class="button">View on Arxiv →</a>
+{% endblock %}

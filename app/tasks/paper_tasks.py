@@ -11,6 +11,8 @@ from app.tasks.email_tasks import send_paper_notification
 from app.services.pubsub import pubsub_manager
 from app.tasks.search_tasks import sync_paper_to_elasticsearch
 
+DB_URL = settings.prod_database_url if settings.is_production else settings.database_url
+
 
 def parse_arxiv_datetime(val: str | date | datetime) -> datetime:
     if isinstance(val, datetime):
@@ -36,7 +38,7 @@ def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str, owner_id: str
 
     async def run_fetch() -> dict:
         # Fresh connection — owned entirely by this task
-        conn = await asyncpg.connect(settings.database_url)
+        conn = await asyncpg.connect(DB_URL)
 
         try:
 
@@ -45,12 +47,6 @@ def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str, owner_id: str
                 "UPDATE papers SET status = 'processing' WHERE id = $1", paper_id
             )
 
-            # Fetch from Arxiv
-            # response = httpx.get(
-            #     ARXIV_API, params={"id_list": arxiv_id, "max_results": 1}, timeout=30.0
-            # )
-
-            # response.raise_for_status()
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(
                     ARXIV_API,
@@ -80,12 +76,23 @@ def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str, owner_id: str
                 for author in entry.findall("atom:author", NAMESPACE)
             ]
 
-            categories: list[str] = [
-                cat.get("term")
-                for cat in entry.findall(
-                    "{http://arxiv.org/schemas/atom}category", NAMESPACE
-                )
-            ]
+            # Both ways categories appear in Arxiv XML
+            categories = []
+
+            # Method 1 — standard atom categories
+            atom_cats = entry.findall(
+                "atom:category", {"atom": "http://www.w3.org/2005/Atom"}
+            )
+            categories.extend([cat.get("term") for cat in atom_cats if cat.get("term")])
+
+            # Method 2 — no namespace (also appears this way)
+            plain_cats = entry.findall("category")
+            categories.extend(
+                [cat.get("term") for cat in plain_cats if cat.get("term")]
+            )
+
+            # Deduplicate
+            categories = list(set(categories))
 
             published_at = parse_arxiv_datetime(published)
 
@@ -114,6 +121,8 @@ def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str, owner_id: str
 
             sync_paper_to_elasticsearch.delay(paper_id)
 
+            # logger.info("Before publish")
+
             # Publish event
             await pubsub_manager.publish(
                 owner_id,
@@ -124,7 +133,9 @@ def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str, owner_id: str
                     "status": "completed",
                 },
             )
+            # logger.info(f"Loop ID: {id(asyncio.get_running_loop())}")
 
+            # logger.info("After publish")
             # Chain email notification
             send_paper_notification.delay(owner_id, paper_id)
 

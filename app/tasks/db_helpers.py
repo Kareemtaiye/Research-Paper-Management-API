@@ -1,7 +1,9 @@
 import psycopg2
-import os
+from app.core.config import settings
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = (
+    settings.prod_database_url if settings.is_production else settings.database_url
+)
 
 
 def get_sync_conn():
@@ -29,7 +31,7 @@ def get_paper_by_id(paper_id: str):
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT id, owner_id, title, authors, arxiv_url, published_at FROM papers WHERE id = %s
+                SELECT id, owner_id, title, authors, arxiv_url, categories, abstract, published_at FROM papers WHERE id = %s
                 """,
                 (str(paper_id),),
             )
@@ -41,7 +43,9 @@ def get_paper_by_id(paper_id: str):
                     "title": row[2],
                     "authors": row[3],
                     "arxiv_url": row[4],
-                    "published_at": row[5],
+                    "categories": row[5],
+                    "abstract": row[6],
+                    "published_at": row[7],
                 }
             return None
     finally:

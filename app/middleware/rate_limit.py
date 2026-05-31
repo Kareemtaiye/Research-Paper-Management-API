@@ -35,7 +35,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         path = request.url.path
 
         # chose limit
-        if path == "/auth/token":
+        if path == "/api/v1/auth/token":
             print("herr")
             limit = self.LOGIN_LIMIT
             key_prefix = "login"
@@ -44,25 +44,33 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             key_prefix = "global"
 
         # Build key
-        key = f"rate_limit{key_prefix}:{ip}"
+        key = f"rate_limit:{key_prefix}:{ip}"
 
-        # increment counter
-        current = await redis_client.incr(key)
+        try:
 
-        # Set expiry only on first request
-        if current == 1:
-            await redis_client.expire(key, self.WINDOW)
+            # increment counter
+            current = await redis_client.incr(key)
 
-        # Check limit
-        if current > limit:
-            ttl = await redis_client.ttl(key)
-            return JSONResponse(
-                status_code=429,
-                content=jsonable_encoder(
-                    ErrorResponse(status="error", code=429, message="Too many requests")
-                ),
-                headers={"Retry-After": str(ttl if ttl > 0 else self.WINDOW)},
-            )
+            # Set expiry only on first request
+            if current == 1:
+                await redis_client.expire(key, self.WINDOW)
+
+            # Check limit
+            if current > limit:
+                ttl = await redis_client.ttl(key)
+                return JSONResponse(
+                    status_code=429,
+                    content=jsonable_encoder(
+                        ErrorResponse(
+                            status="error", code=429, message="Too many requests"
+                        )
+                    ),
+                    headers={"Retry-After": str(ttl if ttl > 0 else self.WINDOW)},
+                )
+
+        except Exception:
+            # fail open if redis unavailable
+            pass
 
         # Continue request
         response = await call_next(request)

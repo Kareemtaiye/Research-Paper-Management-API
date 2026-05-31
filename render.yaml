@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: research-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - fromGroup: research-api-vars
+    healthCheckPath: /health
+
+  - type: worker
+    name: research-api-celery
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    startCommand: celery -A app.tasks.celery_app.celery_app worker --loglevel=info
+    envVars:
+      - fromGroup: research-api-vars
+
+envVarGroups:
+  - name: research-api-vars
+    envVars:
+      - key: DATABASE_URL
+        sync: false # marks as secret — you fill value in dashboard
+      - key: REDIS_CACHE_URL
+        sync: false
+      - key: CELERY_BROKER_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
