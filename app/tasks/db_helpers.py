@@ -7,7 +7,7 @@ DATABASE_URL = (
 
 
 def get_sync_conn():
-    return psycopg2.connect(DATABASE_URL)
+    return psycopg2.connect(DATABASE_URL, sslmode="require")
 
 
 def get_user_by_id(user_id: str):

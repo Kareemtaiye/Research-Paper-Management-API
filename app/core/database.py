@@ -62,7 +62,12 @@ async def lifespan(app: FastAPI):
         try:
             logger.info(f"Connecting to Postgres DB ({attempt}/{max_retry})...")
             # Initialize the pool once on startup
-            _pool = await asyncpg.create_pool(dsn=DB_URL, max_size=20, ssl=None)
+            _pool = await asyncpg.create_pool(
+                dsn=DB_URL,
+                min_size=1,  # start with 1 connection
+                max_size=5,  # never exceed 5 — well under Supabase's 15 limit
+                ssl="require",
+            )  # Supabase requires SSL)
 
             logger.info("Database pool created successfully")
             break  # End loop if successful
