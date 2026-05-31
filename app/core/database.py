@@ -102,7 +102,8 @@ async def lifespan(app: FastAPI):
 
         if attempt == es_retry:
             logger.critical("Elasticsearch failed permanently")
-            raise RuntimeError("ES startup failed")
+            # raise RuntimeError("ES startup failed")
+            pass  # fail gracefully in render
 
         await asyncio.sleep(es_delay)
 
