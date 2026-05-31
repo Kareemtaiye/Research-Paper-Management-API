@@ -40,6 +40,6 @@ app.include_router(task.router, prefix="/api/v1")
 app.include_router(websocket.router, prefix="/api/v1")
 
 
-@app.get("/", tags=["index"])
-def home():
-    return "Welcome to the research management api server"
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "Research Paper API"}
