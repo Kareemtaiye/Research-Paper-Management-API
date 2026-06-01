@@ -135,7 +135,7 @@ async def delete_paper(
     await service.delete_paper(conn=conn, id=paper["id"])
 
     # After deleting from PostgreSQL
-    remove_paper_from_elasticsearch.delay(paper["id"])
+    # remove_paper_from_elasticsearch.delay(paper["id"])
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
