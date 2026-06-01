@@ -119,7 +119,8 @@ def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str, owner_id: str
 
             logger.info(f"Fetched metadata for paper {paper_id} from Arxiv: {title}")
 
-            sync_paper_to_elasticsearch.delay(paper_id)
+            # Later
+            # sync_paper_to_elasticsearch.delay(paper_id)
 
             # logger.info("Before publish")
 

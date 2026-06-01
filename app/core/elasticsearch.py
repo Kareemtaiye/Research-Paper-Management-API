@@ -1,5 +1,4 @@
 from elasticsearch import AsyncElasticsearch
-import os
 from app.core.config import settings
 
 ES_URL = settings.prod_es_url if settings.is_production else settings.es_url
