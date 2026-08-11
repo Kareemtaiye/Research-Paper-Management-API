@@ -1,4 +1,5 @@
 from json import JSONDecodeError
+import os
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
@@ -55,9 +56,18 @@ async def upload_arxiv_paper(
     paper_entry = await service.create_arxiv_paper_entry(conn=conn, data=entry_data)
 
     # Start backgorund task to fetch metadata from Arxiv
-    task = fetch_arxiv_paper_metadata.delay(
-        paper_entry["id"], arxiv_id, current_user.id
-    )
+    try:
+        task = fetch_arxiv_paper_metadata.delay(
+            paper_entry["id"], arxiv_id, current_user.id
+        )
+    except Exception as e:
+        # Rollback paper entry if task fails to start
+        await service.delete_paper(conn=conn, id=paper_entry["id"])
+        print("Failed to start background task for Arxiv import:", str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to start background task for Arxiv import: arxiv_id={arxiv_id}.",
+        )
 
     # Update paper entry with task id for tracking
     await service.update_paper_task_id(

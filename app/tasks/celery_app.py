@@ -1,5 +1,5 @@
+import os
 import ssl
-
 from celery import Celery
 from app.core.config import settings
 
@@ -25,9 +25,19 @@ celery_app = Celery(
     ],
 )
 
+# 1. Get the current broker URL from the environment string
+broker_url = os.environ.get("CELERY_BROKER_URL", "")
+
+# 2. Dynamically determine if SSL options are needed based on the URL scheme
+# (Only apply SSL parameters if the URL explicitly starts with rediss://)
+use_ssl = (
+    {"ssl_cert_reqs": ssl.CERT_NONE} if broker_url.startswith("rediss://") else None
+)
+
+
 celery_app.conf.update(
-    broker_use_ssl={"ssl_cert_reqs": ssl.CERT_NONE},
-    redis_backend_use_ssl={"ssl_cert_reqs": ssl.CERT_NONE},
+    broker_use_ssl=use_ssl,
+    redis_backend_use_ssl=use_ssl,
     task_serializer="json",
     result_serializer="json",
     accept_content=["json"],

@@ -96,3 +96,10 @@ class PaperService:
         if count == 0:
             raise PaperNotFoundException(paper_id)
         return count
+
+    async def get_recent_papers(
+        self, conn, user_id: str, query_params: ListQueryParams
+    ):
+        return await self.repo.get_recent_papers(
+            conn=conn, user_id=user_id, **query_params.model_dump()
+        )

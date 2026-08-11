@@ -10,4 +10,4 @@ class ListQueryParams(BaseModel):
     model_config = ConfigDict({"extra": "ignore"})
 
     page: int = 1
-    per_page: int = 20
+    per_page: int = 10

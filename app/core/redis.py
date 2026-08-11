@@ -1,6 +1,8 @@
 import redis.asyncio as redis
 from app.core.config import settings
 
+print("REDIS_URL:", settings.redis_cache_url)
+
 REDIS_URL = (
     settings.prod_redis_cache_url
     if settings.is_production

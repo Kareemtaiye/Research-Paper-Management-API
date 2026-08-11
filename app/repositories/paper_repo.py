@@ -138,3 +138,16 @@ class PaperRepository:
 
         operation, _, affected_row = status_str.rpartition(" ")
         return int(affected_row)
+
+    @with_connection
+    async def get_recent_papers(
+        self, conn: asyncpg.Connection, user_id: str, page: int, per_page: int
+    ):
+        offset = (page - 1) * per_page
+
+        data_query = "SELECT * FROM papers WHERE owner_id = $1 ORDER BY created_at DESC OFFSET $2 LIMIT $3"
+        count_query = "SELECT COUNT(*) FROM papers"
+
+        data = await conn.fetch(data_query, user_id, offset, per_page)
+        count = await conn.fetchval(count_query)
+        return {"data": data, "count": count}

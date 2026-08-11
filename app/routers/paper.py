@@ -92,6 +92,28 @@ async def read_my_papers(
     )
 
 
+@router.get("/recent", response_model=ListResponse, tags=["recent-papers"])
+async def get_recent_papers(
+    params: Annotated[ListQueryParams, Query()],
+    conn=Depends(get_conn),
+    current_user=Depends(get_current_user),
+):
+    data = await service.get_recent_papers(
+        conn=conn, user_id=current_user.id, query_params=params
+    )
+
+    response_data = ListResponse(
+        data=[dict(record) for record in data["data"]],
+        page=params.page,
+        per_page=params.per_page,
+        total=data["count"],
+    )
+    return JSONResponse(
+        status_code=200,
+        content={"status": "success", "data": jsonable_encoder(response_data)},
+    )
+
+
 @router.get("/{resource_id}")
 async def read_one_paper(
     resource_id: str,

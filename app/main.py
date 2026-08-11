@@ -10,9 +10,20 @@ from app.exceptions.handlers import register_exception_handlers
 from app.services.search_service import create_index_if_not_exists
 from app.tasks.paper_tasks import test_task
 from prometheus_fastapi_instrumentator import Instrumentator
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(lifespan=lifespan)
 Instrumentator().instrument(app).expose(app)
+
+origins = ["http://localhost:8443", "research-paper-management-frontend.vercel.app"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health", tags=["Health"])
