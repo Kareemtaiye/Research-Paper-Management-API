@@ -9,4 +9,4 @@ dump.rdb
 *.rdb
 .devcontainer
 .pytest_cache
-.vscode
+.vscode/
