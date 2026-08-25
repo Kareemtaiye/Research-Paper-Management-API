@@ -1,3 +1,5 @@
+import json
+
 import psycopg2
 from app.core.config import settings
 
@@ -48,5 +50,64 @@ def get_paper_by_id(paper_id: str):
                     "published_at": row[7],
                 }
             return None
+    finally:
+        conn.close()
+
+
+# app/tasks/db_helpers.py
+
+
+def create_task_record(task_id: str, owner_id: str, task_type: str, paper_id: str):
+    conn = get_sync_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO tasks (task_id, owner_id, task_type, paper_id, status)
+                VALUES (%s, %s, %s, %s, 'pending')
+                RETURNING id
+            """,
+                (task_id, owner_id, task_type, paper_id),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def update_task_record(
+    task_id: str,
+    status: str,
+    progress: int | None = None,
+    stage: str | None = None,
+    stage_message: str | None = None,
+    result: dict | None = None,
+    error: str | None = None,
+):
+    conn = get_sync_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE tasks SET
+                    status = %s,
+                    progress = COALESCE(%s, progress),
+                    stage = COALESCE(%s, stage),
+                    stage_message = COALESCE(%s, stage_message),
+                    result = COALESCE(%s, result),
+                    error = COALESCE(%s, error),
+                    updated_at = NOW()
+                WHERE task_id = %s
+            """,
+                (
+                    status,
+                    progress,
+                    stage,
+                    stage_message,
+                    json.dumps(result) if result else None,
+                    error,
+                    task_id,
+                ),
+            )
+        conn.commit()
     finally:
         conn.close()
