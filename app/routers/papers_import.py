@@ -10,6 +10,7 @@ from app.dependencies.user import get_current_user
 from app.schemas.paper import ArxivImportResponse, ArxivImportRequest
 from app.schemas.user import UserOutput
 from app.services.paper_service import PaperService
+from app.tasks.db_helpers import create_task_record
 from app.tasks.paper_tasks import fetch_arxiv_paper_metadata
 from app.utils.extract_arxiv_id import extract_arxiv_id
 
@@ -74,7 +75,13 @@ async def upload_arxiv_paper(
         conn=conn, paper_id=paper_entry["id"], task_id=task.id
     )
 
-    print(task.id, "Task: id")
+    # Create task record in PostgreSQL
+    create_task_record(
+        task_id=task.id,
+        owner_id=str(current_user.id),
+        task_type="fetch_paper_metadata",
+        paper_id=str(paper_entry["id"]),
+    )
 
     # Return immediately
     return JSONResponse(
