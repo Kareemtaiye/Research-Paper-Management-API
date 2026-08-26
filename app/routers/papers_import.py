@@ -75,13 +75,22 @@ async def upload_arxiv_paper(
         conn=conn, paper_id=paper_entry["id"], task_id=task.id
     )
 
-    # Create task record in PostgreSQL
-    create_task_record(
-        task_id=task.id,
-        owner_id=str(current_user.id),
-        task_type="fetch_paper_metadata",
-        paper_id=str(paper_entry["id"]),
-    )
+    try:
+        # Create task record in PostgreSQL
+        create_task_record(
+            task_id=task.id,
+            owner_id=str(current_user.id),
+            task_type="fetch_paper_metadata",
+            paper_id=str(paper_entry["id"]),
+        )
+    except Exception as e:
+        # Rollback paper entry and task if task record creation fails
+        await service.delete_paper(conn=conn, id=paper_entry["id"])
+        print("Failed to create task record in PostgreSQL:", str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create task record in PostgreSQL for Arxiv import: arxiv_id={arxiv_id}.",
+        )
 
     # Return immediately
     return JSONResponse(
