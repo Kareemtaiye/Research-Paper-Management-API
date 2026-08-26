@@ -9,7 +9,11 @@ DATABASE_URL = (
 
 
 def get_sync_conn():
-    return psycopg2.connect(DATABASE_URL, sslmode="require")
+    # Only use SSL in production
+    if settings.is_production:
+        return psycopg2.connect(DATABASE_URL, sslmode="require")
+    else:
+        return psycopg2.connect(DATABASE_URL)
 
 
 def get_user_by_id(user_id: str):
@@ -107,6 +111,19 @@ def update_task_record(
                     error,
                     task_id,
                 ),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _update_status_sync(paper_id: str, status: str):
+    conn = get_sync_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE papers SET status = %s, updated_at = NOW() WHERE id = %s",
+                (status, paper_id),
             )
         conn.commit()
     finally:
