@@ -11,6 +11,7 @@ from app.services.search_service import create_index_if_not_exists
 from app.tasks.paper_tasks import test_task
 from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
 
 app = FastAPI(lifespan=lifespan)
 Instrumentator().instrument(app).expose(app)
