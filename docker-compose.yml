@@ -84,15 +84,24 @@ services:
   celery_worker:
     build: .
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     environment:
-      - DATABASE_URL=${PROD_DATABASE_URL}
-      - REDIS_CACHE_URL=${PROD_REDIS_CACHE_URL}
-      - CELERY_BROKER_URL=${PROD_CELERY_BROKER_URL}
-      - CELERY_RESULT_BACKEND=${PROD_CELERY_RESULT_BACKEND}
+      - ENV=development
+      - DATABASE_URL=${DATABASE_URL}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+      - PROD_CELERY_BROKER_URL=${PROD_CELERY_BROKER_URL}
+      - PROD_CELERY_RESULT_BACKEND=${PROD_CELERY_RESULT_BACKEND}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - FROM_EMAIL=${FROM_EMAIL}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
     env_file:
       - .env
     command: celery -A app.tasks.celery_app.celery_app worker --loglevel=info
+    restart: unless-stopped
 
   migrate:
     image: postgres:15 # use this instead of build: .
