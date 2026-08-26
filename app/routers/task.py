@@ -1,14 +1,13 @@
 from typing import Annotated
-from urllib import response
 
 from celery.result import AsyncResult
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from pytest import param
-
+from fastapi import status
 from app.core.database import get_conn
 from app.dependencies.user import get_current_user
+from app.exceptions.schemas import ErrorResponse
 from app.schemas.request import ListQueryParams
 from app.schemas.response import ListResponse
 from app.schemas.task import TaskResponse, TaskStatusResponse
@@ -49,7 +48,7 @@ async def get_all_tasks(
 
 @router.get("/tasks/{task_id}")
 async def get_task(
-    task_id: str, current_user=Depends(get_current_user), conn=Depends(get_db)
+    task_id: str, current_user=Depends(get_current_user), conn=Depends(get_conn)
 ):
     row = await conn.fetchrow(
         """
@@ -63,14 +62,21 @@ async def get_task(
     )
 
     if not row:
-        raise HTTPException(404, "Task not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_404_NOT_FOUND,
+                message="Task not found.",
+            ),
+        )
 
     return {"status": "success", "data": dict(row)}
 
 
 @router.get("/tasks/stats/summary")
 async def get_tasks_summary(
-    current_user=Depends(get_current_user), conn=Depends(get_db)
+    current_user=Depends(get_current_user), conn=Depends(get_conn)
 ):
     """Quick stats — useful for dashboard."""
     rows = await conn.fetch(

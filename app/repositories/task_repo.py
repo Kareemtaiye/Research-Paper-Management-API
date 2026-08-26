@@ -10,7 +10,7 @@ class TaskRepository:
 
         offset = (page - 1) * per_page
 
-        data_query = "SELECT * FROM tasks OFFSET $1 LIMIT $2 WHERE owner_id = $3"
+        data_query = "SELECT * FROM tasks WHERE owner_id = $3 OFFSET $1 LIMIT $2"
         count_query = "SELECT COUNT(*) FROM tasks WHERE owner_id = $1"
 
         data = await conn.fetch(data_query, offset, per_page, user_id)
