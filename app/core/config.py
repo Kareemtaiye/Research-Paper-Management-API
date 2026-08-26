@@ -14,10 +14,10 @@ class Settings(BaseSettings):
     secret_key: str
     env: str = "development"
 
-    redis_cache_url: Optional[str] = None
-    celery_broker_url: Optional[str] = None
-    celery_result_backend: Optional[str] = None
-    redis_pubsub_url: Optional[str] = None
+    redis_cache_url: str
+    celery_broker_url: str
+    celery_result_backend: str
+    redis_pubsub_url: str
 
     prod_redis_cache_url: str
     prod_celery_broker_url: str
