@@ -1,13 +1,14 @@
 import redis.asyncio as redis
 from app.core.config import settings
 
-print("REDIS_URL:", settings.redis_cache_url)
-
 REDIS_URL = (
     settings.prod_redis_cache_url
     if settings.is_production
     else settings.redis_cache_url
 )
+
+# Only add SSL params for rediss:// URLs
+is_ssl = REDIS_URL.startswith("rediss://")
 
 redis_client = redis.from_url(
     REDIS_URL,
@@ -17,4 +18,5 @@ redis_client = redis.from_url(
     socket_timeout=10,
     retry_on_timeout=True,
     health_check_interval=30,
+    **({"ssl_cert_reqs": None} if is_ssl else {}),
 )
