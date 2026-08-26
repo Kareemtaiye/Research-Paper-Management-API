@@ -58,6 +58,9 @@ async def lifespan(app: FastAPI):
 
     global _pool
 
+    # SSL only in production
+    ssl_setting = "require" if settings.is_production else None
+
     for attempt in range(1, max_retry + 1):
         try:
             logger.info(f"Connecting to Postgres DB ({attempt}/{max_retry})...")
@@ -66,7 +69,7 @@ async def lifespan(app: FastAPI):
                 dsn=DB_URL,
                 min_size=1,  # start with 1 connection
                 max_size=5,  # never exceed 5 — well under Supabase's 15 limit
-                ssl="require",
+                ssl=ssl_setting,
             )  # Supabase requires SSL)
 
             logger.info("Database pool created successfully")
