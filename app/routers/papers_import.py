@@ -1,16 +1,15 @@
-from json import JSONDecodeError
-import os
-
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
 from app.core.database import get_conn
 from app.dependencies.user import get_current_user
+from app.schemas import task
 from app.schemas.paper import ArxivImportResponse, ArxivImportRequest
 from app.schemas.user import UserOutput
 from app.services.paper_service import PaperService
-from app.tasks.db_helpers import create_task_record
+from app.tasks.db_helpers import create_task_record, update_real_task_id
 from app.tasks.paper_tasks import fetch_arxiv_paper_metadata
 from app.utils.extract_arxiv_id import extract_arxiv_id
 
@@ -56,6 +55,24 @@ async def upload_arxiv_paper(
     # Paper insert with status pending
     paper_entry = await service.create_arxiv_paper_entry(conn=conn, data=entry_data)
 
+    placeholder_task_id = str(uuid.uuid4())
+    try:
+        # Create task record in PostgreSQL
+        create_task_record(
+            task_id=placeholder_task_id,
+            owner_id=str(current_user.id),
+            task_type="fetch_paper_metadata",
+            paper_id=str(paper_entry["id"]),
+        )
+    except Exception as e:
+        # Rollback paper entry and task if task record creation fails
+        await service.delete_paper(conn=conn, id=paper_entry["id"])
+        print("Failed to create task record in PostgreSQL:", str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create task record in PostgreSQL for Arxiv import: arxiv_id={arxiv_id}.",
+        )
+
     # Start backgorund task to fetch metadata from Arxiv
     try:
         task = fetch_arxiv_paper_metadata.delay(
@@ -70,27 +87,13 @@ async def upload_arxiv_paper(
             detail=f"Failed to start background task for Arxiv import: arxiv_id={arxiv_id}.",
         )
 
+    # 4. Update placeholder task_id with real Celery task_id
+    update_real_task_id(placeholder_task_id, str(task.id))
+
     # Update paper entry with task id for tracking
     await service.update_paper_task_id(
         conn=conn, paper_id=paper_entry["id"], task_id=task.id
     )
-
-    try:
-        # Create task record in PostgreSQL
-        create_task_record(
-            task_id=task.id,
-            owner_id=str(current_user.id),
-            task_type="fetch_paper_metadata",
-            paper_id=str(paper_entry["id"]),
-        )
-    except Exception as e:
-        # Rollback paper entry and task if task record creation fails
-        await service.delete_paper(conn=conn, id=paper_entry["id"])
-        print("Failed to create task record in PostgreSQL:", str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create task record in PostgreSQL for Arxiv import: arxiv_id={arxiv_id}.",
-        )
 
     # Return immediately
     return JSONResponse(
