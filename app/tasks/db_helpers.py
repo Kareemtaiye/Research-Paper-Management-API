@@ -86,7 +86,9 @@ def update_task_record(
     stage_message: str | None = None,
     result: dict | None = None,
     error: str | None = None,
+    worker_name: str | None = None,
 ):
+
     conn = get_sync_conn()
     try:
         with conn.cursor() as cur:
@@ -99,6 +101,11 @@ def update_task_record(
                     stage_message = COALESCE(%s, stage_message),
                     result = COALESCE(%s, result),
                     error = COALESCE(%s, error),
+                    completed_at = CASE 
+                        WHEN %s IN ('completed','failed') THEN NOW() 
+                        ELSE completed_at 
+                    END,
+                    worker_name = COALESCE(%s, worker_name),
                     updated_at = NOW()
                 WHERE task_id = %s
             """,
@@ -109,6 +116,8 @@ def update_task_record(
                     stage_message,
                     json.dumps(result) if result else None,
                     error,
+                    status,
+                    worker_name,
                     task_id,
                 ),
             )
@@ -124,6 +133,20 @@ def _update_status_sync(paper_id: str, status: str):
             cur.execute(
                 "UPDATE papers SET status = %s, updated_at = NOW() WHERE id = %s",
                 (status, paper_id),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def update_real_task_id(placeholder_id: str, real_task_id: str):
+    """Replace placeholder task_id with real Celery task_id."""
+    conn = get_sync_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE tasks SET task_id = %s WHERE task_id = %s",
+                (real_task_id, placeholder_id),
             )
         conn.commit()
     finally:
