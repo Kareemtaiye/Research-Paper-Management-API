@@ -24,5 +24,7 @@ class TaskResponse(BaseModel):
     result: Optional[dict] = None
     error: Optional[str] = None
     paper_id: str | UUID
+    completed_at: Optional[str] = None
+    worker_name: Optional[str] = None
     created_at: str
     updated_at: str
