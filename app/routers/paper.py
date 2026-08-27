@@ -132,10 +132,10 @@ async def read_one_paper(
 @router.delete("/{resource_id}")
 async def delete_paper(
     paper: Annotated[Any, Depends(RequireOwnerOrRole(service.get_paper))],
+    # This magic line handles: Auth, Role check, Fetching, and Ownership check!
     resource_id: str,
     conn=Depends(get_conn),
     _: UserOutput = Depends(get_current_user),  # for authentication
-    # This magic line handles: Auth, Role check, Fetching, and Ownership check!
 ):
     # paper = await service.get_paper(conn=conn, id=paper_id)
 
@@ -174,12 +174,3 @@ async def add_paper_tag(
         status_code=201,
         content={"status": "success", "message": "Tag added successfully"},
     )
-
-
-# ------ v2 features -------
-# @router.post("/import/arxiv", tags=["Arxiv-import"], response_model=PaperResponse)
-# async def upload_arxiv_paper(
-#     data: ArxivImportRequest,
-#     current_user: UserOutput = Depends(get_current_user),
-#     conn=Depends(get_conn),
-# ): ...
