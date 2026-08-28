@@ -103,7 +103,7 @@ async def get_tasks_summary(
     }
 
 
-@router.get("{task_id}", response_model=TaskStatusResponse)
+@router.get("/{task_id}/status", response_model=TaskStatusResponse)
 async def get_task_status(
     task_id: str,
     conn=Depends(get_conn),
