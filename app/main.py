@@ -16,7 +16,13 @@ from app.core.config import settings
 app = FastAPI(lifespan=lifespan)
 Instrumentator().instrument(app).expose(app)
 
-origins = ["http://localhost:8443", "research-paper-management-frontend.vercel.app"]
+origins = [
+    "http://localhost:8443",
+    "http://localhost:3000",  # local frontend dev
+    "https://research-paper-management-frontend.vercel.app",  # missing https://
+    "ws://localhost",  # WebSocket local
+    "wss://research-paper-management-frontend.vercel.app",  # WebSocket prod
+]
 
 app.add_middleware(
     CORSMiddleware,
