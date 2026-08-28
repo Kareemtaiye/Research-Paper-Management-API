@@ -78,6 +78,10 @@ def create_task_record(task_id: str, owner_id: str, task_type: str, paper_id: st
         conn.close()
 
 
+import asyncio
+from app.services.pubsub import publish_sync, pubsub_manager
+
+
 def update_task_record(
     task_id: str,
     status: str,
@@ -88,10 +92,15 @@ def update_task_record(
     error: str | None = None,
     worker_name: str | None = None,
 ):
-
     conn = get_sync_conn()
     try:
         with conn.cursor() as cur:
+            # Fetch owner_id before updating
+            cur.execute("SELECT owner_id FROM tasks WHERE task_id = %s", (task_id,))
+            row = cur.fetchone()
+            owner_id = str(row[0]) if row else None
+
+            # Update the task
             cur.execute(
                 """
                 UPDATE tasks SET
@@ -108,7 +117,7 @@ def update_task_record(
                     worker_name = COALESCE(%s, worker_name),
                     updated_at = NOW()
                 WHERE task_id = %s
-            """,
+                """,
                 (
                     status,
                     progress,
@@ -122,6 +131,24 @@ def update_task_record(
                 ),
             )
         conn.commit()
+
+        # Publish to Redis after successful DB update
+        if owner_id:
+            publish_sync(
+                f"user:{owner_id}",
+                {
+                    "event": "task_update",
+                    "task_id": task_id,
+                    "status": status,
+                    "progress": progress,
+                    "stage": stage,
+                    "stage_message": stage_message,
+                    "worker_name": worker_name,
+                    "error": error,
+                    "result": result,
+                },
+            )
+
     finally:
         conn.close()
 
@@ -132,7 +159,7 @@ def _update_status_sync(paper_id: str, status: str):
         with conn.cursor() as cur:
             cur.execute(
                 "UPDATE papers SET status = %s, updated_at = NOW() WHERE id = %s",
-                (status, paper_id),
+                (status, str(paper_id)),
             )
         conn.commit()
     finally:
