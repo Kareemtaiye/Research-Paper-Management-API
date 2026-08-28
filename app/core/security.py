@@ -1,5 +1,6 @@
 import hashlib
 from typing import Any
+from app.core.logger import logger
 
 import jwt
 import secrets
@@ -54,6 +55,8 @@ def verify_websocket_token(token: str, user_id: str):
     try:
         payload = verify_jwt(token)
         token_user_id = payload.get("sub")
+        logger.info(f"WS auth: token_user_id={token_user_id}, user_id={user_id}")
         return token_user_id == user_id
-    except Exception:
+    except Exception as e:
+        logger.error(f"WS auth failed: {type(e).__name__}: {e}")
         return False  # Might be invalid token or jwt exp err
