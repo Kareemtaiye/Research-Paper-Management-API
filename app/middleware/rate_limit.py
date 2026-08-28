@@ -1,3 +1,5 @@
+from urllib import request
+
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
@@ -23,6 +25,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.WINDOW = 60
 
     async def dispatch(self, request: Request, call_next):
+
+        # Skip rate limiting for WebSocket connections
+        if request.url.path.startswith("/api/v1/ws/"):
+            return await call_next(request)
         # identify client..
         ip = request.client.host
 
