@@ -52,11 +52,7 @@ def verify_websocket_token(token: str, user_id: str):
     Returns False otherwise.
     """
 
-    try:
-        payload = verify_jwt(token)
-        token_user_id = payload.get("sub")
-        logger.info(f"WS auth: token_user_id={token_user_id}, user_id={user_id}")
-        return token_user_id == user_id
-    except Exception as e:
-        logger.error(f"WS auth failed: {type(e).__name__}: {e}")
-        return False  # Might be invalid token or jwt exp err
+    payload = verify_jwt(token)
+    token_user_id = payload.get("sub")
+    logger.info(f"WS auth: token_user_id={token_user_id}, user_id={user_id}")
+    return token_user_id == user_id
