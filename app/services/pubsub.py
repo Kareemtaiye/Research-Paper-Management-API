@@ -1,9 +1,11 @@
+import os
+
 import redis.asyncio as redis
 import json
 import asyncio
 from app.core.config import settings
 from app.core.logger import logger
-import redis as sync_redis
+import redis as redis_sync
 
 REDIS_PUBSUB_URL = (
     settings.prod_redis_pubsub_url
@@ -52,22 +54,22 @@ class PubSubManager:
             await pubsub_obj.unsubscribe(channel)
             await pubsub_obj.close()
 
+    # ── Sync client (for Celery tasks) ────────────────────────────
 
-# ── Sync client (for Celery tasks) ────────────────────────────
-def publish_sync(user_id: str, data: dict):
-    """
-    Synchronous publish for use inside Celery tasks.
-    Avoids event loop conflicts with asyncio.run().
-    """
-    client = sync_redis.from_url(
-        REDIS_PUBSUB_URL,
-        decode_responses=True,
-        **({"ssl_cert_reqs": None} if REDIS_PUBSUB_URL.startswith("rediss://") else {}),
-    )
+
+# app/services/pubsub.py
+
+
+def publish_sync(owner_id: str, data: dict):
+    """Sync publisher for use inside Celery workers."""
     try:
-        client.publish(f"user:{user_id}", json.dumps(data))
-    finally:
-        client.close()
+        r = redis_sync.Redis.from_url(
+            os.getenv("REDIS_PUBSUB_URL", "redis://redis:6379/3"), decode_responses=True
+        )
+        r.publish(f"user:{owner_id}", json.dumps(data))
+        r.close()
+    except Exception as e:
+        print(f"Publish failed (non-fatal): {e}")
 
 
 # Singleton instance - one manager shared accross the app
