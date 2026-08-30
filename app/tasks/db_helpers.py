@@ -71,7 +71,7 @@ def create_task_record(task_id: str, owner_id: str, task_type: str, paper_id: st
                 VALUES (%s, %s, %s, %s, 'pending')
                 RETURNING id
             """,
-                (task_id, owner_id, task_type, paper_id),
+                (task_id, owner_id, task_type, str(paper_id)),
             )
         conn.commit()
     finally:
@@ -135,7 +135,7 @@ def update_task_record(
         # Publish to Redis after successful DB update
         if owner_id:
             publish_sync(
-                f"user:{owner_id}",
+                owner_id,
                 {
                     "event": "task_update",
                     "task_id": task_id,
