@@ -11,7 +11,7 @@ from app.core.database import get_conn
 from app.dependencies.user import get_current_user
 from app.dependencies.permission import RequireOwnerOrRole, RequireRole
 from app.schemas.paper import PaperCreate, PaperResponse
-from app.schemas.request import ListQueryParams
+from app.schemas.request import ListQueryParams, SearchQueryParams
 from app.schemas.response import ListResponse
 from app.schemas.user import UserOutput
 from app.services.paper_service import PaperService
@@ -106,6 +106,33 @@ async def get_recent_papers(
         data=[dict(record) for record in data["data"]],
         page=params.page,
         per_page=params.per_page,
+        total=data["count"],
+    )
+    return JSONResponse(
+        status_code=200,
+        content={"status": "success", "data": jsonable_encoder(response_data)},
+    )
+
+
+@router.get("/search", tags=["search"])
+async def search_papers(
+    params: Annotated[SearchQueryParams, Query()],
+    current_user: UserOutput = Depends(get_current_user),
+    conn=Depends(get_conn),
+):
+    if params:
+        q = params.q
+        limit = params.limit
+        offset = params.offset
+
+    data = await service.search_papers(
+        conn=conn, q=q, user_id=str(current_user.id), limit=limit, offset=offset
+    )
+
+    response_data = ListResponse(
+        data=[dict(record) for record in data["data"]],
+        page=(offset // limit) + 1,
+        per_page=limit,
         total=data["count"],
     )
     return JSONResponse(
