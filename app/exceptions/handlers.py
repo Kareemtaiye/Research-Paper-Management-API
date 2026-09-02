@@ -63,30 +63,29 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
         #             "msg": err.get("msg"),
         #         }
         #     )
-
         details = [
             {
-                "api_param": err["loc"][0] or None,
-                "field": err["loc"][1] or "",
-                "input": err["input"],
-                "msg": err["msg"],
+                "api_param": err["loc"][0] if len(err["loc"]) > 0 else None,
+                "field": err["loc"][1] if len(err["loc"]) > 1 else err["loc"][-1],
+                "input": err.get("input"),
+                "msg": err.get("msg"),
             }
             for err in exc.errors()
         ]
 
         err_obj = ErrorResponse(
             status="error",
-            code=400,
+            code=422,
             message="Inputs validation failed",
             details=details,
         )
 
         logger.error(f"Pydantic validation failed for user input: {exc}")
 
-        return JSONResponse(status_code=500, content=err_obj.model_dump())
+        return JSONResponse(status_code=422, content=err_obj.model_dump())
 
     @app.exception_handler(ValidationError)
-    def req_validation_exception_handler(request: Request, exc: RequestValidationError):
+    def req_validation_exception_handler(request: Request, exc: ValidationError):
         details = [
             {
                 "field": err["loc"][0] or "",
@@ -98,14 +97,14 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
 
         err_obj = ErrorResponse(
             status="error",
-            code=400,
+            code=422,
             message="Inputs validation failed",
             details=details,
         )
 
         logger.error(f"Pydantic validation failed for user input: {exc.errors()}")
 
-        return JSONResponse(status_code=500, content=err_obj.model_dump())
+        return JSONResponse(status_code=422, content=err_obj.model_dump())
 
     @app.exception_handler(StarletteHTTPException)
     def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
