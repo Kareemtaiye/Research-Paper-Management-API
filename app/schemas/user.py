@@ -18,3 +18,7 @@ class UserOutput(BaseUser):
 
     id: str | UUID
     created_at: Any
+
+
+class UpdateUserRequest(BaseModel):
+    email: EmailStr
