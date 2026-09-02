@@ -151,3 +151,65 @@ class PaperRepository:
         data = await conn.fetch(data_query, user_id, offset, per_page)
         count = await conn.fetchval(count_query)
         return {"data": data, "count": count}
+
+    @with_connection
+    async def search_paper(
+        self, conn: asyncpg.Connection, q: str, user_id: str, limit: int, offset: int
+    ):
+
+        data = await conn.fetch(
+            """
+        SELECT
+           p.id,
+            p.title,
+            p.arxiv_id,
+            p.arxiv_url,
+            p.authors,
+            p.categories,
+            p.abstract,
+            p.status,
+            p.published_at,
+            p.created_at,
+            ts_rank(p.search_vector, query) AS rank,
+            ts_headline(
+                'english',
+                COALESCE(p.title, ''),
+                query,
+                'StartSel=<mark>, StopSel=</mark>, MaxWords=10, MinWords=5'
+            ) AS title_headline,
+            ts_headline(
+                'english',
+                COALESCE(p.abstract, ''),
+                query,
+                'StartSel=<mark>, StopSel=</mark>, MaxFragments=1, MaxWords=20'
+            ) AS abstract_headline
+        FROM papers p,
+             plainto_tsquery('english', $1) query
+        WHERE p.owner_id = $2
+          AND p.status = 'completed'
+          AND p.search_vector @@ query
+        ORDER BY rank DESC
+        LIMIT $3 OFFSET $4
+             """,
+            q,
+            str(user_id),
+            limit,
+            offset,
+        )
+
+        count = await conn.fetchval(
+            """
+            SELECT COUNT(*)
+            FROM papers p,
+                plainto_tsquery('english', $1) query
+            WHERE p.owner_id = $2
+            AND p.status = 'completed'
+            AND p.search_vector @@ query
+        """,
+            q,
+            str(user_id),
+        )
+
+        print(f'Search results: {{"data": {data}, "count": {count}}}')
+
+        return {"data": data, "count": count}
