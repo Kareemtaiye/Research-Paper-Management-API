@@ -20,6 +20,7 @@ origins = [
     "http://localhost:8443",
     "http://localhost:3000",  # local frontend dev
     "https://research-paper-management-frontend.vercel.app",  # missing https://
+    "https://research-paper-management-fro-git-0932c6-kareem-taiyes-projects.vercel.app/"
     "ws://localhost",  # WebSocket local
     "wss://research-paper-management-frontend.vercel.app",  # WebSocket prod
 ]
