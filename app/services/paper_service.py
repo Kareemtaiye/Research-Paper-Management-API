@@ -103,3 +103,8 @@ class PaperService:
         return await self.repo.get_recent_papers(
             conn=conn, user_id=user_id, **query_params.model_dump()
         )
+
+    async def search_papers(self, conn, q: str, user_id: str, limit: int, offset: int):
+        return await self.repo.search_paper(
+            conn=conn, q=q, user_id=user_id, limit=limit, offset=offset
+        )
