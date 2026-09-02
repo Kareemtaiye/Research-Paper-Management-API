@@ -24,6 +24,11 @@ class TaskNotFoundException(ResourceNotFoundException):
         super().__init__(task_id, "Task")
 
 
+class UserNotFoundException(ResourceNotFoundException):
+    def __init__(self, user_id: str | UUID):
+        super().__init__(user_id, "User")
+
+
 # -------- V1 -------------
 # class PaperNotFoundException(Exception):
 #     def __init__(self, paper_id: str | UUID):
