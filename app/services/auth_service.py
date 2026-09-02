@@ -1,8 +1,6 @@
-from hmac import new
 from typing import Any
 
 import asyncpg
-
 from app.core.exceptions import SessionNotFoundException
 from app.core.logger import logger
 from app.schemas.auth import LoginInput, SessionCreate
@@ -41,6 +39,10 @@ class AuthService:
 
         if not user:
             verify_password(user_data.password, DUMMY_HASH)  # Solves timing attack
+            return None
+
+        if user["is_deleted"]:
+            logger.warning(f"Deleted user {user['email']} attempted to log in")
             return None
 
         password_match = verify_password(user_data.password, user["password"])
@@ -99,3 +101,11 @@ class AuthService:
             # New access token
             access_token = generate_access_token(data=str(session["user_id"]))
         return {"access_token": access_token, "refresh_token": new_refresh_token}
+
+    async def find_user_by_email(self, conn: asyncpg.Connection, email: str):
+        user = await self.repo.find_user_by_email(conn=conn, email=email)
+
+        if not user:
+            return None
+
+        return user
