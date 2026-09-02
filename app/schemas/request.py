@@ -11,3 +11,9 @@ class ListQueryParams(BaseModel):
 
     page: int = 1
     per_page: int = 10
+
+
+class SearchQueryParams(BaseModel):
+    q: str
+    limit: int = 10
+    offset: int = 0
