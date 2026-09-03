@@ -153,6 +153,15 @@ class PaperRepository:
         return {"data": data, "count": count}
 
     @with_connection
+    async def delete_user_papers(self, conn: asyncpg.Connection, user_id: str):
+        """Deletes all papers associated with a user. Returns the number of deleted rows."""
+        query = "DELETE FROM papers WHERE owner_id = $1"
+
+        status_str = await conn.execute(query, user_id)
+        operation, _, affected_row = status_str.rpartition(" ")
+        return int(affected_row)
+
+    @with_connection
     async def search_paper(
         self, conn: asyncpg.Connection, q: str, user_id: str, limit: int, offset: int
     ):

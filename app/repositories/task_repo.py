@@ -23,6 +23,6 @@ class TaskRepository:
         return await conn.fetchrow(query, task_id)
 
     @with_connection
-    async def delete_tasks_by_user(self, conn: asyncpg.Connection, user_id: str):
+    async def delete_user_tasks(self, conn: asyncpg.Connection, user_id: str):
         query = "DELETE FROM tasks WHERE owner_id = $1"
         await conn.execute(query, user_id)
