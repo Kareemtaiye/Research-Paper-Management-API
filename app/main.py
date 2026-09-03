@@ -18,12 +18,12 @@ Instrumentator().instrument(app).expose(app)
 
 origins = [
     "http://localhost:8443",
-    "http://localhost:3000",  # local frontend dev
-    "https://research-paper-management-frontend.vercel.app",  # missing https://
-    "https://research-paper-management-fro-git-0932c6-kareem-taiyes-projects.vercel.app/"
+    "http://localhost:3000",
+    "https://research-paper-management-frontend.vercel.app",
+    "https://research-paper-management-fro-git-0932c6-kareem-taiyes-projects.vercel.app/",
     "https://labs.kareemtaiye.com",
-    "ws://localhost",  # WebSocket local
-    "wss://research-paper-management-frontend.vercel.app",  # WebSocket prod
+    "ws://localhost",
+    "wss://research-paper-management-frontend.vercel.app",
 ]
 
 app.add_middleware(
