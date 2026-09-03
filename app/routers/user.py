@@ -87,5 +87,6 @@ async def delete_account(
 
 
 @router.delete("/me/library")
-async def clear_library():
-    pass
+async def clear_library(current_user=Depends(get_current_user), conn=Depends(get_conn)):
+    await service.clear_user_library(conn=conn, user_id=current_user.id)
+    return {"status": "success", "message": "User library cleared successfully"}
