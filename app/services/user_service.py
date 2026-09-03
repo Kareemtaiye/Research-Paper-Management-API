@@ -59,6 +59,6 @@ class UserService:
     async def clear_user_library(self, conn, user_id: str):
         # Delete all papers and tasks associated with the user
         async with conn.transaction():
-            await self.paper_repo.delete_papers_by_user(conn=conn, user_id=user_id)
-            await self.task_repo.delete_tasks_by_user(conn=conn, user_id=user_id)
+            await self.paper_repo.delete_user_papers(conn=conn, user_id=user_id)
+            await self.task_repo.delete_user_tasks(conn=conn, user_id=user_id)
         logger.info(f"Cleared library for user {user_id}")
