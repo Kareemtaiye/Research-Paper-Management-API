@@ -11,9 +11,9 @@ class AuthRepository:
         conn: asyncpg.Connection = None,
     ):
         query = """
-        INSERT INTO users (email, role, password) 
-        values ($1, $2, $3) 
-        RETURNING id, email, role, created_at
+        INSERT INTO users (email, role, full_name, password) 
+        values ($1, $2, $3, $4) 
+        RETURNING id, email, full_name, role, created_at
         """
 
         return await conn.fetchrow(query, *user_data.values())
