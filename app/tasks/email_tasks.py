@@ -57,7 +57,9 @@ def send_paper_notification(self, user_id: str, paper_id: str):
     msg.attach(MIMEText(html, "html"))
 
     if settings.is_production:
-        email_manager.send_paper_complete_email(email_subject, user["email"], paper)
+        email_manager.send_paper_complete_email(
+            email_subject, user["email"], user["full_name"], paper
+        )
     else:
         # mailhog, locally
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
