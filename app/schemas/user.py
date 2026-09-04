@@ -10,6 +10,7 @@ class BaseUser(BaseModel):
 
 
 class UserCreate(BaseUser):
+    full_name: str | None = None
     password: str
 
 
@@ -17,8 +18,10 @@ class UserOutput(BaseUser):
     model_config = ConfigDict(extra="ignore")
 
     id: str | UUID
+    full_name: str | None = None
     created_at: Any
 
 
 class UpdateUserRequest(BaseModel):
-    email: EmailStr
+    email: EmailStr | None = None
+    full_name: str | None = None
