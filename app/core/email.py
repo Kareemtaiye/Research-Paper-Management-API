@@ -1,5 +1,6 @@
 import resend
 from app.core.config import settings
+from app.schemas import user
 from app.services.email_renderer import render_email
 from app.core.logger import logger
 
@@ -26,10 +27,15 @@ class EmailManager:
         email = resend.Emails.send(params)
         return email
 
-    def send_paper_complete_email(self, subject: str, user_email: str, paper: dict):
+    def send_paper_complete_email(
+        self, subject: str, user_email: str, user_full_name: str, paper: dict
+    ):
+        # In email templates
+        hi = f"Hi {user_full_name or user_email.split('@')[0]},"
         html = render_email(
             "paper_completed.html",
             {
+                "hi": hi,
                 "title": paper["title"],
                 "authors": ", ".join(paper["authors"] or []),
                 "published_at": paper["published_at"],
