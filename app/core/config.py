@@ -27,15 +27,22 @@ class Settings(BaseSettings):
     prod_es_url: str
 
     # Email
-    resend_api_key: str
-    from_email: str
     mail_hog_smtp_host: str
     mail_hog_smtp_port: int
     mail_hog_from_email: str
+
+    resend_api_key: str
+    from_email: str
     noreply_email: str
+    verify_email: str
+    security_email: str
+    welcome_email: str
     from_email_test: str
     reply_to_email: str
     display_name: str
+
+    frontend_url_local: Optional[str] = None
+    frontend_url_prod: Optional[str] = None
 
     # Pydantic will automatically cast these strings from the env to integers
     access_token_expire_minutes: int = 15
