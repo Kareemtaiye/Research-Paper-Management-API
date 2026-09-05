@@ -17,3 +17,7 @@ class LoginOutput(BaseUser):
 class SessionCreate(BaseModel):
     user_id: str | UUID
     token_hash: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
