@@ -1,0 +1,60 @@
+{% extends "emails/base.html" %} {% block content %}
+<p style="margin: 0 0 20px; font-size: 14px; color: #94a3b8; line-height: 1.6">
+  Thanks for signing up{% if full_name %},
+  <strong style="color: #e2e8f0">{{ full_name }}</strong>{% endif %}. Please verify your
+  email address to activate your account and start importing papers.
+</p>
+
+<div class="field">
+  <div class="field-label">Verifying</div>
+  <div class="field-value">{{ email }}</div>
+</div>
+
+<div class="cta">
+  <a href="{{ verify_link }}" class="button">Verify email address →</a>
+</div>
+
+<div class="url-box">
+  <div class="url-label">
+    Button not working? Copy and paste this link into your browser:
+  </div>
+  <div class="url-value">{{ verify_link }}</div>
+</div>
+
+<hr class="divider" />
+
+<p
+  style="
+    margin: 0 0 10px;
+    font-size: 10px;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  "
+>
+  What you can do after verifying
+</p>
+
+<div class="feature-row">
+  <div class="feature-title">Import papers</div>
+  <div class="feature-desc">
+    Paste any Arxiv URL — metadata fetched automatically in the background
+  </div>
+</div>
+
+<div class="feature-row">
+  <div class="feature-title">Search your library</div>
+  <div class="feature-desc">Full-text search across titles, abstracts, and authors</div>
+</div>
+
+<div class="feature-row">
+  <div class="feature-title">Real-time updates</div>
+  <div class="feature-desc">WebSocket notifications the moment your imports complete</div>
+</div>
+
+<div class="info-box" style="margin-top: 20px">
+  This verification link expires in <strong style="color: #e2e8f0">24 hours</strong>. If
+  you didn't create an account, you can safely ignore this email — no account will be
+  activated without verification.
+</div>
+{% endblock %}
