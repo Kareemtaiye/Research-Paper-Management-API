@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from typing import Annotated
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Header, Response, Request
 from fastapi.encoders import jsonable_encoder
@@ -6,14 +7,19 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.core.database import get_conn
 from app.dependencies.user import get_current_user
 from app.exceptions.schemas import ErrorResponse
-from app.schemas.auth import LoginInput
+from app.schemas.auth import ForgotPasswordRequest, LoginInput
 from app.schemas.user import UserCreate, UserOutput
 from app.services.auth_service import AuthService
 from app.core.logger import logger
+import secrets
+from app.services.token_service import TokenService
+from app.core.email import EmailManager
+from app.tasks import email_tasks
 
 router = APIRouter(prefix="/auth")
 
 service = AuthService()
+token_service = TokenService()
 
 # cookie_option = {
 #     "httponly": True,
@@ -132,3 +138,51 @@ async def refresh_token(
         "access_token": data["access_token"],
         "token_type": "bearer",
     }
+
+
+# POST /auth/forgot-password    → accepts email, sends reset link
+# POST /auth/reset-password     → accepts token + new password, resets it
+
+# POST /auth/verify-email       → accepts verification token, marks email verified
+# POST /auth/resend-verification → resends verification email
+
+
+@router.post("/forgot-password", tags=["forgot-password"])
+async def forgot_password(body: ForgotPasswordRequest, conn=Depends(get_conn)):
+    user = await service.find_user_by_email(conn=conn, email=body.email)
+
+    # Always return success — don't reveal if email exists
+    if not user:
+        logger.warning(f"Forgot password attempt for non-existent email: {body.email}")
+        return {
+            "status": "success",
+            "message": "If the email exists, a reset link has been sent.",
+        }
+
+    # Generate reset token
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.utcnow() + timedelta(hours=1)
+
+    await token_service.create_password_reset_token(
+        conn=conn, user_id=user["id"], token=token, expires_at=expires_at
+    )
+
+    # Send reset email
+    email_tasks.send_password_reset_email.delay(user["email"], token)
+
+    return {
+        "status": "success",
+        "message": "If that email exists, a reset link was sent",
+    }
+
+
+@router.post("/reset-password", tags=["reset-password"])
+async def reset_password(request: Request, email: str, conn=Depends(get_conn)): ...
+
+
+@router.post("/verify-email", tags=["verify-email"])
+async def verify_email(request: Request, email: str, conn=Depends(get_conn)): ...
+
+
+@router.post("/resend-verification", tags=["resend-verification"])
+async def resend_verification(request: Request, email: str, conn=Depends(get_conn)): ...
