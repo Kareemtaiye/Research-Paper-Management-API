@@ -2,6 +2,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from app.core.email import EmailManager
+from app.schemas.user import UserOutput
 from app.tasks.celery_app import celery_app
 from app.tasks.db_helpers import get_paper_by_id, get_user_by_id
 from app.core.config import settings
@@ -70,3 +71,65 @@ def send_paper_notification(self, user_id: str, paper_id: str):
 
 # @celery_app.task(bind=True, max_retries=3, default_retry_delay=30)
 # def send_paper_import_failed_notification(self)
+
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=30)
+def send_welcome_email(self, user: UserOutput):
+    """Send welcome email to new user."""
+    if not user:
+        return {"error": "User not found"}
+
+    if settings.is_production:
+        email_manager.send_welcome_email(user.email, user.full_name)
+    else:
+        # mailhog, locally
+        subject = "Welcome to PaperBase"
+        hi = f"Hi {user.full_name or user.email.split('@')[0]},"
+        html = f"""
+        <html><body>
+        <h2>Welcome to PaperBase</h2>
+        <p>{hi}</p>
+        <p>Thank you for signing up! We're excited to have you on board.</p>
+        </body></html>
+                """
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = FROM_EMAIL
+        msg["To"] = user.email
+        msg.attach(MIMEText(html, "html"))
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.sendmail(FROM_EMAIL, user.email, msg.as_string())
+
+    return {"status": "sent", "to": user.email}
+
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=30)
+def send_password_reset_email(self, user_email: str, token: str):
+    """Send password reset email."""
+    if not user_email or not token:
+        return {"error": "User email or token not provided"}
+
+    if settings.is_production:
+        email_manager.send_password_reset_email(user_email, token)
+    else:
+        # mailhog, locally
+        subject = "Password Reset Request"
+        reset_link = f"{settings.frontend_url_local}/reset-password?token={token}"
+        html = f"""
+        <html><body>
+        <h2>Password Reset Request</h2>
+        <p>Click the link below to reset your password:</p>
+        <a href="{reset_link}">Reset Password</a>
+        </body></html>
+                """
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = FROM_EMAIL
+        msg["To"] = user_email
+        msg.attach(MIMEText(html, "html"))
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.sendmail(FROM_EMAIL, user_email, msg.as_string())
+
+    return {"status": "sent", "to": user_email}
