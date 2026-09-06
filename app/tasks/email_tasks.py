@@ -4,7 +4,11 @@ from email.mime.multipart import MIMEMultipart
 from app.core.email import EmailManager
 from app.schemas.user import UserOutput
 from app.tasks.celery_app import celery_app
-from app.tasks.db_helpers import get_paper_by_id, get_user_by_id
+from app.tasks.db_helpers import (
+    get_paper_by_id,
+    get_user_by_id,
+    get_user_preference_sync,
+)
 from app.core.config import settings
 
 SMTP_HOST = settings.mail_hog_smtp_host
@@ -16,57 +20,62 @@ email_manager = EmailManager()
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=30)
 def send_paper_notification(self, user_id: str, paper_id: str):
     """Send email notification when paper processing completes."""
-    user = get_user_by_id(user_id)
-    paper = get_paper_by_id(paper_id)
+    prefs = get_user_preference_sync(user_id)  # sync db helper
 
-    if not user or not paper:
-        return {"error": "User or paper not found"}
+    if not prefs or prefs["email_on_import_complete"]:
 
-    email_subject = f"Paper Ready: {paper['title']}"
-    # Build email
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = email_subject
-    msg["From"] = FROM_EMAIL
-    msg["To"] = user["email"]
+        user = get_user_by_id(user_id)
+        paper = get_paper_by_id(paper_id)
 
-    # Plain text version
-    text = f"""
-    Hi {user['email']},
+        if not user or not paper:
+            return {"error": "User or paper not found"}
 
-    Your paper has been successfully imported:
+        email_subject = f"Paper Ready: {paper['title']}"
+        # Build email
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = email_subject
+        msg["From"] = FROM_EMAIL
+        msg["To"] = user["email"]
 
-    Title:      {paper['title']}
-    Authors:    {', '.join(paper['authors'] or [])}
-    Published:  {paper['published_at']}
-    Link:       {paper['arxiv_url']}
+        # Plain text version
+        text = f"""
+        Hi {user['email']},
 
-    View it in your dashboard.
-            """
+        Your paper has been successfully imported:
 
-    # HTML version
-    html = f"""
-    <html><body>
-    <h2>Paper Successfully Imported</h2>
-    <p><strong>Title:</strong> {paper['title']}</p>
-    <p><strong>Authors:</strong> {', '.join(paper['authors'] or [])}</p>
-    <p><strong>Published:</strong> {paper['published_at']}</p>
-    <p><a href="{paper['arxiv_url']}">View on Arxiv</a></p>
-    </body></html>
-            """
+        Title:      {paper['title']}
+        Authors:    {', '.join(paper['authors'] or [])}
+        Published:  {paper['published_at']}
+        Link:       {paper['arxiv_url']}
 
-    msg.attach(MIMEText(text, "plain"))
-    msg.attach(MIMEText(html, "html"))
+        View it in your dashboard.
+                """
 
-    if settings.is_production:
-        email_manager.send_paper_complete_email(
-            email_subject, user["email"], user["full_name"], paper
-        )
-    else:
-        # mailhog, locally
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.sendmail(FROM_EMAIL, user["email"], msg.as_string())
+        # HTML version
+        html = f"""
+        <html><body>
+        <h2>Paper Successfully Imported</h2>
+        <p><strong>Title:</strong> {paper['title']}</p>
+        <p><strong>Authors:</strong> {', '.join(paper['authors'] or [])}</p>
+        <p><strong>Published:</strong> {paper['published_at']}</p>
+        <p><a href="{paper['arxiv_url']}">View on Arxiv</a></p>
+        </body></html>
+                """
 
-    return {"status": "sent", "to": user["email"]}
+        msg.attach(MIMEText(text, "plain"))
+        msg.attach(MIMEText(html, "html"))
+
+        if settings.is_production:
+            email_manager.send_paper_complete_email(
+                email_subject, user["email"], user["full_name"], paper
+            )
+        else:
+            # mailhog, locally
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                server.sendmail(FROM_EMAIL, user["email"], msg.as_string())
+
+        return {"status": "sent", "to": user["email"]}
+    return
 
 
 # @celery_app.task(bind=True, max_retries=3, default_retry_delay=30)
@@ -121,6 +130,95 @@ def send_password_reset_email(self, user_email: str, token: str):
         <h2>Password Reset Request</h2>
         <p>Click the link below to reset your password:</p>
         <a href="{reset_link}">Reset Password</a>
+        </body></html>
+                """
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = FROM_EMAIL
+        msg["To"] = user_email
+        msg.attach(MIMEText(html, "html"))
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.sendmail(FROM_EMAIL, user_email, msg.as_string())
+
+    return {"status": "sent", "to": user_email}
+
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=30)
+def send_email_verification_email(self, user_email: str, token: str):
+    """Send verification email."""
+    if not user_email or not token:
+        return {"error": "User email or token not provided"}
+
+    if settings.is_production:
+        email_manager.send_email_verification_email(user_email, token)
+    else:
+        # mailhog, locally
+        subject = "Verification email"
+        reset_link = f"{settings.frontend_url_local}/verify-email?token={token}"
+        html = f"""
+        <html><body>
+        <h2>Verification Email</h2>
+        <p>Click the link below to verify your email</p>
+        <a href="{reset_link}"Verify email</a>
+        </body></html>
+                """
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = FROM_EMAIL
+        msg["To"] = user_email
+        msg.attach(MIMEText(html, "html"))
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.sendmail(FROM_EMAIL, user_email, msg.as_string())
+
+    return {"status": "sent", "to": user_email}
+
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=30)
+def send_password_reset_success_email(self, user_email: str):
+    """Send password reset success email."""
+    if not user_email:
+        return {"error": "User email not provided"}
+
+    if settings.is_production:
+        email_manager.send_password_reset_success_email(user_email)
+    else:
+        # mailhog, locally
+        subject = "Password Reset Successfully"
+        html = f"""
+        <html><body>
+        <h2>Password Reset Successfullyl</h2>
+        <p>You have successsful reset your password</p>
+        </body></html>
+                """
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = FROM_EMAIL
+        msg["To"] = user_email
+        msg.attach(MIMEText(html, "html"))
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.sendmail(FROM_EMAIL, user_email, msg.as_string())
+
+    return {"status": "sent", "to": user_email}
+
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=30)
+def send_email_verification_success_email(self, user_email: str):
+    """Send success email on verification."""
+    if not user_email:
+        return {"error": "User email not provided"}
+
+    if settings.is_production:
+        email_manager.send_email_verification_success_email(user_email)
+    else:
+        # mailhog, locally
+        subject = "Email Verified Successfully"
+        html = f"""
+        <html><body>
+        <h2>Email Verified Successfullyl</h2>
+        <p>You have successsful verified your emaill</p>
         </body></html>
                 """
         msg = MIMEMultipart("alternative")
