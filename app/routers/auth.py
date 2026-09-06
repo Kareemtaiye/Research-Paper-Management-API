@@ -1,19 +1,29 @@
 from datetime import datetime, timedelta
 from typing import Annotated
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Header, Response, Request
+from fastapi import (
+    APIRouter,
+    Cookie,
+    Depends,
+    HTTPException,
+    Header,
+    Query,
+    Response,
+    Request,
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from app.core.database import get_conn
+from app.core.security import hash_password
 from app.dependencies.user import get_current_user
 from app.exceptions.schemas import ErrorResponse
-from app.schemas.auth import ForgotPasswordRequest, LoginInput
+from app.schemas.auth import ForgotPasswordRequest, LoginInput, ResetPasswordRequest
 from app.schemas.user import UserCreate, UserOutput
 from app.services.auth_service import AuthService
 from app.core.logger import logger
 import secrets
 from app.services.token_service import TokenService
-from app.core.email import EmailManager
+
 from app.tasks import email_tasks
 
 router = APIRouter(prefix="/auth")
@@ -177,7 +187,21 @@ async def forgot_password(body: ForgotPasswordRequest, conn=Depends(get_conn)):
 
 
 @router.post("/reset-password", tags=["reset-password"])
-async def reset_password(request: Request, email: str, conn=Depends(get_conn)): ...
+async def reset_password(
+    body: ResetPasswordRequest, token: Annotated[str, Query()], conn=Depends(get_conn)
+):
+    token_row = await token_service.get_password_reset_token(conn=conn, token=token)
+
+    if not token_row:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired reset token.",
+        )
+
+    if token_row["expires_at"] < datetime.utcnow():
+        raise HTTPException(400, "Reset token has expired")
+
+    hashed = hash_password(body.new_password)
 
 
 @router.post("/verify-email", tags=["verify-email"])
