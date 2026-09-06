@@ -178,3 +178,16 @@ def update_real_task_id(placeholder_id: str, real_task_id: str):
         conn.commit()
     finally:
         conn.close()
+
+
+def get_user_preference_sync(user_id: str):
+    conn = get_sync_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM user_preferences WHERE user_id = $",
+                (user_id),
+            )
+        conn.commit()
+    finally:
+        conn.close()
