@@ -21,7 +21,7 @@ class TokenRepository:
     @with_connection
     async def get_password_reset_token(self, conn: asyncpg.Connection, token: str):
         query = """
-            SELECT * FROM password_reset_tokens
+            SELECT user_id, expires_at FROM password_reset_tokens
             WHERE token = $1 AND expires_at > NOW()
         """
         return await conn.fetchrow(query, token)
