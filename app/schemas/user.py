@@ -25,3 +25,13 @@ class UserOutput(BaseUser):
 class UpdateUserRequest(BaseModel):
     email: EmailStr | None = None
     full_name: str | None = None
+
+
+class UpdateUserPreferencesRequest(BaseModel):
+    email_on_import_complete: bool
+    websocket_auto_reconnect: bool
+
+
+class UserPreferencesOutput(BaseModel):
+    email_on_import_complete: bool
+    websocket_auto_reconnect: bool
