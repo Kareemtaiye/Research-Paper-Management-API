@@ -10,6 +10,7 @@ from app.dependencies.user import get_current_user
 from app.schemas.user import UpdateUserRequest
 from app.services.auth_service import AuthService
 from app.services.user_service import UserService
+from app.schemas.user import UpdateUserPreferencesRequest, UserPreferencesOutput
 
 router = APIRouter(prefix="/user", tags=["users"])
 
@@ -20,12 +21,6 @@ service = UserService()
 @router.get("/me")
 async def get_me(me=Depends(get_current_user)):
     return me
-
-
-# PATCH /users/me           → update email
-# PATCH /users/me/password  → change password
-# DELETE /users/me/library  → clear all papers and tasks
-# DELETE /users/me          → delete account
 
 
 @router.patch("/me")
@@ -91,3 +86,34 @@ async def clear_library(current_user=Depends(get_current_user), conn=Depends(get
     await service.clear_user_library(conn=conn, user_id=current_user.id)
 
     return {"status": "success", "message": "User library cleared successfully"}
+
+
+@router.get("/me/preferences")
+async def get_preferences(
+    current_user=Depends(get_current_user), conn=Depends(get_conn)
+):
+    preferences = await service.get_user_preferences(conn=conn, user_id=current_user.id)
+    return {"status": "success", "data": UserPreferencesOutput(**preferences)}
+
+
+@router.patch("/me/preferences")
+async def update_preferences(
+    body: UpdateUserPreferencesRequest,
+    current_user=Depends(get_current_user),
+    conn=Depends(get_conn),
+):
+    await service.update_user_preferences(
+        conn=conn,
+        user_id=current_user.id,
+        email_on_import_complete=body.email_on_import_complete,
+        websocket_auto_reconnect=body.websocket_auto_reconnect,
+    )
+
+    return {
+        "status": "success",
+        "message": "Preferences updated",
+        "data": {
+            "email_on_import_complete": body.email_on_import_complete,
+            "websocket_auto_reconnect": body.websocket_auto_reconnect,
+        },
+    }
