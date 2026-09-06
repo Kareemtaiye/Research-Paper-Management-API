@@ -6,6 +6,7 @@ from app.core.logger import logger
 from app.schemas.auth import LoginInput, SessionCreate
 from app.schemas.user import UserCreate
 from app.repositories.auth_repo import AuthRepository
+from app.services.user_service import UserService
 from app.core.security import (
     DUMMY_HASH,
     generate_access_token,
@@ -15,8 +16,11 @@ from app.core.security import (
     verify_password,
 )
 from app.services.session_service import SessionService
+from app.services.token_service import TokenService
 
 session_service = SessionService()
+user_service = UserService()
+token_service = TokenService()
 
 
 class AuthService:
@@ -110,9 +114,15 @@ class AuthService:
 
         return user
 
-    async def forgot_password(self, conn: asyncpg.Connection, email: str): ...
+    async def reset_user_password(
+        self, user_id: str, password_hash: str, conn: asyncpg.Connection, token: str
+    ):
+        async with conn.transaction():
+            await user_service.update_user_password(
+                conn=conn, user_id=user_id, new_password_hash=password_hash
+            )
 
-    async def reset_password(self, conn: asyncpg.Connection, email: str): ...
+            await token_service.delete_password_reset_token(conn=conn, token=token)
 
     async def verify_email(self, conn: asyncpg.Connection, email: str): ...
 
