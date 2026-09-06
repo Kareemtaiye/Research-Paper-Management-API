@@ -7,6 +7,7 @@ from app.repositories.task_repo import TaskRepository
 from app.core.exceptions import UserNotFoundException
 from app.repositories.user_repo import UserRepository
 from app.repositories.auth_repo import AuthRepository
+from app.repositories.user_preference_repo import UserPreferenceRepository
 
 
 class UserService:
@@ -15,7 +16,8 @@ class UserService:
         self.paper_repo = PaperRepository()
         self.task_repo = TaskRepository()
         self.auth_repo = AuthRepository()
-
+        self.user_preference_repo = UserPreferenceRepository()
+        
     async def get_user_by_id(self, conn, id: str):
         return await self.repo.get_user_by_id(conn=conn, id=id)
 
@@ -62,3 +64,15 @@ class UserService:
             await self.paper_repo.delete_user_papers(conn=conn, user_id=user_id)
             await self.task_repo.delete_user_tasks(conn=conn, user_id=user_id)
         logger.info(f"Cleared library for user {user_id}")
+
+    async def update_user_preferences(self, conn, user_id: str, email_on_import_complete: bool, websocket_auto_reconnect: bool):
+        count = await self.user_preference_repo.update_user_preferences(
+            conn=conn, user_id=user_id, email_on_import_complete=email_on_import_complete, websocket_auto_reconnect=websocket_auto_reconnect
+        )
+        if count == 0:
+            raise UserNotFoundException(user_id)
+        logger.info(f"Updated user preferences for user {user_id}")
+        return count
+
+    async def get_user_preferences(self, conn, user_id: str):
+        return await self.user_preference_repo.get_user_preferences(conn=conn, user_id=user_id)
