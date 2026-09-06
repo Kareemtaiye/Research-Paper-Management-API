@@ -21,3 +21,8 @@ class SessionCreate(BaseModel):
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    new_password: str
+    # email_confirm: EmailStr
