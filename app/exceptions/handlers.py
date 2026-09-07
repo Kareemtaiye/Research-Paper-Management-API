@@ -128,7 +128,7 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
         return JSONResponse(
             status_code=400,
             content=jsonable_encoder(
-                ErrorResponse(code=400, message="Access token expired")
+                ErrorResponse(code=401, message="Access token expired")
             ),
         )
 

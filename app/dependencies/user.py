@@ -27,7 +27,7 @@ async def get_current_user(
     if not user:
         raise HTTPException(
             status_code=400,
-            detail=ErrorResponse(code=400, message="Invalid access token"),
+            detail=ErrorResponse(code=401, message="Invalid access token"),
         )
 
     return UserOutput(**user)
