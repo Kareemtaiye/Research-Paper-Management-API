@@ -126,7 +126,7 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
         logger.error(f"Access token expired for request. IP: {client_ip}")
 
         return JSONResponse(
-            status_code=400,
+            status_code=401,
             content=jsonable_encoder(
                 ErrorResponse(code=401, message="Access token expired")
             ),
@@ -145,9 +145,9 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
         logger.warning(f"Invalid Access token attempt from. IP: {client_ip}")
 
         return JSONResponse(
-            status_code=400,
+            status_code=401,
             content=jsonable_encoder(
-                ErrorResponse(code=400, message="Invalid access token")
+                ErrorResponse(code=401, message="Invalid access token")
             ),
         )
 
