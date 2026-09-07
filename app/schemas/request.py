@@ -10,7 +10,7 @@ class ListQueryParams(BaseModel):
     model_config = ConfigDict({"extra": "ignore"})
 
     page: int = 1
-    per_page: int = 10
+    per_page: int = 5
 
 
 class SearchQueryParams(BaseModel):
