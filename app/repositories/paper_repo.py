@@ -73,16 +73,15 @@ class PaperRepository:
 
     @with_connection
     async def get_user_papers(
-        self, conn: asyncpg.Connection, user_id: str, page: int, per_page: int
+        self,
+        conn: asyncpg.Connection,
+        user_id: str,
     ):
-        offset = (page - 1) * per_page
 
-        data_query = " SELECT * FROM papers WHERE owner_id = $1 OFFSET $2 LIMIT $3"
-        count_query = "SELECT COUNT(*) FROM papers WHERE owner_id = $1"
+        query = "SELECT * FROM papers WHERE owner_id = $1"
 
-        data = await conn.fetch(data_query, user_id, offset, per_page)
-        count = await conn.fetchval(count_query, user_id)
-        return {"data": data, "count": count}
+        res = await conn.fetch(query, user_id)
+        return res
 
     @with_connection
     async def delete_paper(self, conn: asyncpg.Connection, paper_id: str):
@@ -117,12 +116,13 @@ class PaperRepository:
     ):
         query = """
         UPDATE papers 
-        SET title = $1
-            abstract = $2
-            authors = $3
-            categories = $4
-            published_at = $5
-            status = $6
+        SET title = $1,
+            abstract = $2,
+            authors = $3,
+            categories = $4,
+            published_at = $5,
+            status = $6,
+            updated_at = NOW()
         WHERE id = $7
         """
         status_str = await conn.ececute(
@@ -140,17 +140,13 @@ class PaperRepository:
         return int(affected_row)
 
     @with_connection
-    async def get_recent_papers(
-        self, conn: asyncpg.Connection, user_id: str, page: int, per_page: int
-    ):
-        offset = (page - 1) * per_page
+    async def get_recent_papers(self, conn: asyncpg.Connection, user_id: str):
 
-        data_query = "SELECT * FROM papers WHERE owner_id = $1 ORDER BY created_at DESC OFFSET $2 LIMIT $3"
-        count_query = "SELECT COUNT(*) FROM papers"
+        query = (
+            "SELECT * FROM papers WHERE owner_id = $1 ORDER BY created_at DESC LIMIT 10"
+        )
 
-        data = await conn.fetch(data_query, user_id, offset, per_page)
-        count = await conn.fetchval(count_query)
-        return {"data": data, "count": count}
+        return await conn.fetch(query, user_id)
 
     @with_connection
     async def delete_user_papers(self, conn: asyncpg.Connection, user_id: str):
@@ -218,7 +214,5 @@ class PaperRepository:
             q,
             str(user_id),
         )
-
-        print(f'Search results: {{"data": {data}, "count": {count}}}')
 
         return {"data": data, "count": count}
