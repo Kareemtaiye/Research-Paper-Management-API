@@ -42,7 +42,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         # chose limit
         if path == "/api/v1/auth/token":
-            print("herr")
             limit = self.LOGIN_LIMIT
             key_prefix = "login"
         else:
