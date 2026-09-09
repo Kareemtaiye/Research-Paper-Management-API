@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr
@@ -28,8 +28,8 @@ class UpdateUserRequest(BaseModel):
 
 
 class UpdateUserPreferencesRequest(BaseModel):
-    email_on_import_complete: bool
-    websocket_auto_reconnect: bool
+    email_on_import_complete: Optional[bool] = None
+    websocket_auto_reconnect: Optional[bool] = None
 
 
 class UserPreferencesOutput(BaseModel):
