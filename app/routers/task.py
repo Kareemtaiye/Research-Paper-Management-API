@@ -119,8 +119,6 @@ async def get_task_status(
     #         content={"status": "error", "message": "Task not found"},
     #     )
 
-    print(dict(paper_row))
-
     return JSONResponse(
         status_code=200,
         content={
