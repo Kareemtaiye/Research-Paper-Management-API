@@ -18,12 +18,9 @@ Instrumentator().instrument(app).expose(app)
 
 origins = [
     "http://localhost:8443",
-    "http://localhost:3000",
-    "https://research-paper-management-frontend.vercel.app",
-    "https://research-paper-management-fro-git-0932c6-kareem-taiyes-projects.vercel.app/",
+    "https://research-paper-management-frontend-zeta.vercel.app",
+    # "https://research-paper-management-fro-git-0932c6-kareem-taiyes-projects.vercel.app/",
     "https://labs.kareemtaiye.com",
-    "ws://localhost",
-    "wss://research-paper-management-frontend.vercel.app",
 ]
 
 app.add_middleware(
