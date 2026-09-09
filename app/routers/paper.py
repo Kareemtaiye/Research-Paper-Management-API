@@ -58,10 +58,7 @@ async def read_all_papers(
     data = await service.get_all_papers(conn=conn, query_params=params)
 
     response_obj = ListResponse(
-        data=[dict(record) for record in data["data"]],
-        page=params.page,
-        per_page=params.per_page,
-        total=data["count"],
+        data=[dict(record) for record in data],
     )
     return JSONResponse(
         status_code=200,
@@ -69,26 +66,17 @@ async def read_all_papers(
     )
 
 
-@router.get("/me", response_model=ListResponse)
+@router.get("/me")
 async def read_my_papers(
-    params: Annotated[ListQueryParams, Query()],
     conn=Depends(get_conn),
     current_user: UserOutput = Depends(get_current_user),
 ):
+    data = await service.get_user_papers(conn=conn, user_id=current_user.id)
+    print(data)
 
-    data = await service.get_user_papers(
-        conn=conn, user_id=current_user.id, query_params=params
-    )
-
-    response_data = ListResponse(
-        data=[dict(record) for record in data["data"]],
-        page=params.page,
-        per_page=params.per_page,
-        total=data["count"],
-    )
     return JSONResponse(
         status_code=200,
-        content={"status": "success", "data": jsonable_encoder(response_data)},
+        content={"status": "success", "data": jsonable_encoder(data)},
     )
 
 
@@ -98,15 +86,10 @@ async def get_recent_papers(
     conn=Depends(get_conn),
     current_user=Depends(get_current_user),
 ):
-    data = await service.get_recent_papers(
-        conn=conn, user_id=current_user.id, query_params=params
-    )
+    data = await service.get_recent_papers(conn=conn, user_id=current_user.id)
 
     response_data = ListResponse(
-        data=[dict(record) for record in data["data"]],
-        page=params.page,
-        per_page=params.per_page,
-        total=data["count"],
+        data=[dict(record) for record in data],
     )
     return JSONResponse(
         status_code=200,
