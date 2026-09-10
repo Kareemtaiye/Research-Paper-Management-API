@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     from_email_test: str
     reply_to_email: str
     display_name: str
+    contact_email: str
 
     frontend_url_local: Optional[str] = None
     frontend_url_prod: Optional[str] = None
