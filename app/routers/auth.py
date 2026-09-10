@@ -19,6 +19,7 @@ from app.dependencies.user import get_current_user
 from app.exceptions.schemas import ErrorResponse
 from app.schemas.auth import ForgotPasswordRequest, LoginInput, ResetPasswordRequest
 from app.schemas.user import UserCreate, UserOutput
+from app.services.user_service import UserService
 from app.services.auth_service import AuthService
 from app.core.logger import logger
 import secrets
@@ -30,7 +31,7 @@ router = APIRouter(prefix="/auth")
 
 service = AuthService()
 token_service = TokenService()
-
+user_service = UserService()
 # cookie_option = {
 #     "httponly": True,
 #     "secure": False,
@@ -199,9 +200,27 @@ async def reset_password(
         )
 
     if token_row["expires_at"] < datetime.utcnow():
-        raise HTTPException(400, "Reset token has expired")
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired reset token.",
+        )
 
-    hashed = hash_password(body.new_password)
+    hashed_password = hash_password(body.new_password)
+    await user_service.update_user_password(
+        conn=conn, user_id=token_row["user_id"], new_password_hash=hashed_password
+    )
+
+    user = await user_service.get_user_by_id(conn=conn, id=token_row["user_id"])
+
+    email_tasks.send_password_reset_success_email.delay(user["email"])
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "success",
+            "message": "Password reset successful",
+        },
+    )
 
 
 @router.post("/verify-email", tags=["verify-email"])
