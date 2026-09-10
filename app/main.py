@@ -5,7 +5,17 @@ from app.middleware.request_logs import (
     # RequestLoggingMiddleware,
     add_logger_middleware,
 )
-from app.routers import auth, papers_import, task, user, paper, tag, websocket, search
+from app.routers import (
+    auth,
+    papers_import,
+    task,
+    user,
+    paper,
+    tag,
+    websocket,
+    search,
+    feedback,
+)
 from app.exceptions.handlers import register_exception_handlers
 from app.services.search_service import create_index_if_not_exists
 from app.tasks.paper_tasks import test_task
@@ -55,6 +65,7 @@ app.include_router(papers_import.router, prefix="/api/v1")
 app.include_router(tag.router, prefix="/api/v1")
 app.include_router(task.router, prefix="/api/v1")
 app.include_router(websocket.router, prefix="/api/v1")
+app.include_router(feedback.router, prefix="/api/v1")
 
 
 @app.get("/")
