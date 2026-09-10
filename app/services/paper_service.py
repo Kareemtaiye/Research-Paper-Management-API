@@ -37,10 +37,8 @@ class PaperService:
     async def get_all_papers(self, conn, query_params: ListQueryParams):
         return await self.repo.get_all_papers(conn=conn, **query_params.model_dump())
 
-    async def get_user_papers(self, conn, user_id: str | UUID, query_params):
-        return await self.repo.get_user_papers(
-            conn=conn, user_id=user_id, **query_params.model_dump()
-        )
+    async def get_user_papers(self, conn, user_id: str | UUID):
+        return await self.repo.get_user_papers(conn=conn, user_id=user_id)
 
     async def get_paper(self, conn, id: str | UUID):
         paper = await self.repo.get_paper(conn=conn, paper_id=id)
@@ -97,12 +95,8 @@ class PaperService:
             raise PaperNotFoundException(paper_id)
         return count
 
-    async def get_recent_papers(
-        self, conn, user_id: str, query_params: ListQueryParams
-    ):
-        return await self.repo.get_recent_papers(
-            conn=conn, user_id=user_id, **query_params.model_dump()
-        )
+    async def get_recent_papers(self, conn, user_id: str):
+        return await self.repo.get_recent_papers(conn=conn, user_id=user_id)
 
     async def search_papers(self, conn, q: str, user_id: str, limit: int, offset: int):
         return await self.repo.search_paper(
