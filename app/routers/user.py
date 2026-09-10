@@ -1,3 +1,4 @@
+import email
 from typing import Annotated
 
 from pydantic import EmailStr
@@ -29,8 +30,8 @@ async def update_me(
     current_user=Depends(get_current_user),
     conn=Depends(get_conn),
 ):
-    await service.update_user_email(
-        conn=conn, user_id=current_user.id, new_email=body.email
+    await service.update_user_profile(
+        conn=conn, user_id=current_user.id, email=body.email, full_name=body.full_name
     )
 
     return {"status": "success", "message": "User email updated successfully"}
@@ -102,18 +103,12 @@ async def update_preferences(
     current_user=Depends(get_current_user),
     conn=Depends(get_conn),
 ):
-    await service.update_user_preferences(
+
+    prefs = await service.update_user_preferences(
         conn=conn,
         user_id=current_user.id,
         email_on_import_complete=body.email_on_import_complete,
         websocket_auto_reconnect=body.websocket_auto_reconnect,
     )
 
-    return {
-        "status": "success",
-        "message": "Preferences updated",
-        "data": {
-            "email_on_import_complete": body.email_on_import_complete,
-            "websocket_auto_reconnect": body.websocket_auto_reconnect,
-        },
-    }
+    return {"status": "success", "message": "Preferences updated", "data": prefs}
