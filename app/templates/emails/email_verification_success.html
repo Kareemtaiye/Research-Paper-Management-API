@@ -1,0 +1,111 @@
+
+{% extends "emails/base.html" %}
+
+{% block content %}
+<p style="font-size: 14px; color: #94a3b8; margin: 0 0 20px;">
+  Hi {{ full_name or email }},
+</p>
+
+<p style="font-size: 14px; color: #e2e8f0; margin: 0 0 24px; line-height: 1.6;">
+  Your email address has been verified successfully. 
+  You now have full access to your account.
+</p>
+
+<div style="
+  background: rgba(34,197,94,0.06);
+  border: 0.5px solid rgba(34,197,94,0.2);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+">
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+    <span style="color: #4ade80; font-size: 18px;">✓</span>
+    <div style="font-size: 13px; font-weight: 600; color: #4ade80;">
+      Email verified
+    </div>
+  </div>
+  <div style="font-size: 12px; color: #64748b; padding-left: 28px;">
+    {{ email }}
+  </div>
+</div>
+
+<p style="font-size: 13px; color: #94a3b8; margin: 0 0 8px; font-weight: 500;">
+  What you can do now:
+</p>
+
+<div style="margin-bottom: 24px;">
+  <div style="
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 0.5px solid rgba(255,255,255,0.04);
+  ">
+    <span style="color: #6366f1; font-size: 14px; margin-top: 1px;">◉</span>
+    <div>
+      <div style="font-size: 13px; color: #e2e8f0; font-weight: 500;">
+        Import research papers
+      </div>
+      <div style="font-size: 11px; color: #475569; margin-top: 2px;">
+        Paste any Arxiv URL — metadata fetched automatically
+      </div>
+    </div>
+  </div>
+
+  <div style="
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 0.5px solid rgba(255,255,255,0.04);
+  ">
+    <span style="color: #6366f1; font-size: 14px; margin-top: 1px;">◉</span>
+    <div>
+      <div style="font-size: 13px; color: #e2e8f0; font-weight: 500;">
+        Search your library
+      </div>
+      <div style="font-size: 11px; color: #475569; margin-top: 2px;">
+        Full-text search across titles, abstracts, and authors
+      </div>
+    </div>
+  </div>
+
+  <div style="
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+  ">
+    <span style="color: #6366f1; font-size: 14px; margin-top: 1px;">◉</span>
+    <div>
+      <div style="font-size: 13px; color: #e2e8f0; font-weight: 500;">
+        Real-time updates
+      </div>
+      <div style="font-size: 11px; color: #475569; margin-top: 2px;">
+        Get instant notifications when paper processing completes
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  href="{{ dashboard_url }}"
+  style="
+    display: inline-block;
+    padding: 10px 20px;
+    background: #6366f1;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+  "
+>
+  Go to dashboard →
+</a>
+
+<p style="font-size: 11px; color: #475569; margin-top: 24px; line-height: 1.5;">
+  This email was sent to {{ email }} because you created an account 
+  at Research Paper Management API.
+</p>
+{% endblock %}
