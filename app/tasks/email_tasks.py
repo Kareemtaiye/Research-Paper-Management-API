@@ -231,3 +231,13 @@ def send_email_verification_success_email(self, user_email: str):
             server.sendmail(FROM_EMAIL, user_email, msg.as_string())
 
     return {"status": "sent", "to": user_email}
+
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=30)
+def send_feedback_email(self, user_email: str, type: str, message: str):
+    if not user_email:
+        return {"error": "User email not provided"}
+
+    email_manager.send_feedback_email(user_email, type, message)
+
+    return {"status": "sent", "to": "me"}
