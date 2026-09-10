@@ -12,7 +12,6 @@ db_url = os.getenv("DATABASE_URL")
 
 # Pure asyncpg connection string targeting the docker service name
 # TEST_DATABASE_URL = "postgresql://test_user:password_test@db_test:5432/test_app_db"
-print(db_url)
 
 
 # Asynchronous client
