@@ -25,6 +25,7 @@ class EmailManager:
         self.from_email_test = settings.from_email_test
         self.reply_to_email = settings.reply_to_email
         self.display_name = settings.display_name
+        self.contact_email = settings.contact_email
 
         # send_feedback (to you)
         # "from": f"{DISPLAY_NAME} <{NOREPLY_EMAIL}>"
@@ -117,7 +118,7 @@ class EmailManager:
     def send_email_verification_success_email(self, user_email: str):
         subject = "Email Verified Successfully"
         html = render_email(
-            "email_verified.html",
+            "email_verification_success.html",
             {
                 "support_email": self.reply_to_email,
             },
@@ -135,3 +136,22 @@ class EmailManager:
         )
         self.send(self.security_email, user_email, subject, html)
         logger.info(f"Password reset success email sent to {user_email}.")
+
+    def send_feedback_email(self, user_email: str, type: str, message: str):
+
+        subject = {
+            "feedback": "📝 New Feedback — RPM",
+            "bug": "Bug Report — RPM",
+        }.get(type, " New Submission — RPM")
+        self.send(
+            self.from_email,
+            self.contact_email,
+            subject,
+            f"""
+               <h2>{subject}</h2>
+               <p><strong>Type:</strong> {type}</p>
+               <p><strong>From:</strong> {user_email or 'Anonymous'}</p>
+               <hr>
+               <p>{message}</p>
+           """,
+        )
