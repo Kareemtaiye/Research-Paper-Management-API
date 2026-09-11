@@ -23,6 +23,14 @@ class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
 
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
 class ResetPasswordRequest(BaseModel):
     new_password: str
     # email_confirm: EmailStr
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str
