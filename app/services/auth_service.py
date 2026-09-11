@@ -1,4 +1,6 @@
+from datetime import datetime, timedelta, timezone
 from typing import Any
+import secrets
 
 import asyncpg
 from app.core.exceptions import SessionNotFoundException
@@ -28,15 +30,25 @@ class AuthService:
     def __init__(self):
         self.repo = AuthRepository()
 
+    async def issue_email_verification_token(self, conn, user_id: str):
+        token = secrets.token_urlsafe(32)
+        expires_at = datetime.utcnow() + timedelta(hours=24)
+
+        await token_service.create_email_verification_token(
+            conn=conn, user_id=user_id, token=token, expires_at=expires_at
+        )
+        return token
+
     async def register(self, conn, user_data: UserCreate):
         password_hash = hash_password(user_data.password)
 
         user = await self.repo.create_user(
             conn=conn, user_data={**user_data.model_dump(), "password": password_hash}
         )
+        token = await self.issue_email_verification_token(conn=conn, user_id=user["id"])
 
         logger.info(f"User {user['email']} signed up successfully")
-        return user
+        return user, token
 
     async def login(self, conn, user_data: LoginInput):
         user = await self.repo.find_user_by_email(conn=conn, email=user_data.username)
@@ -124,6 +136,37 @@ class AuthService:
 
             await token_service.delete_password_reset_token(conn=conn, token=token)
 
-    async def verify_email(self, conn: asyncpg.Connection, email: str): ...
+    async def verify_email(self, conn: asyncpg.Connection, token: str):
+        token_row = await token_service.get_email_verification_token(
+            conn=conn, token=token
+        )
 
-    async def resend_verification(self, conn: asyncpg.Connection, email: str): ...
+        if not token_row:
+            return None
+
+        if token_row["expires_at"] < datetime.now(timezone.utc):
+            return None
+
+        user = await user_service.get_user_by_id(
+            conn=conn,
+            id=token_row["user_id"],
+        )
+
+        if not user:
+            return None
+
+        if user["email_verified"]:
+            return user, False
+
+        await user_service.mark_email_verified(conn=conn, user_id=token_row["user_id"])
+
+        return user, True
+
+    async def resend_verification(self, conn: asyncpg.Connection, email: str):
+        user = await self.find_user_by_email(conn=conn, email=email)
+
+        if not user or user["is_deleted"] or user["email_verified"]:
+            return None
+
+        token = await self.issue_email_verification_token(conn=conn, user_id=user["id"])
+        return user, token
