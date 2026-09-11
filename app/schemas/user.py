@@ -19,6 +19,7 @@ class UserOutput(BaseUser):
 
     id: str | UUID
     full_name: str | None = None
+    email_verified: bool
     created_at: Any
 
 
