@@ -1,7 +1,7 @@
 import token
 from typing import Annotated
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from app.core.database import get_conn
 from app.core.security import oauth2_scheme, verify_jwt
 from app.exceptions.schemas import ErrorResponse
@@ -15,8 +15,12 @@ async def get_current_user(
 
     if not token:
         raise HTTPException(
-            status_code=401,
-            detail=ErrorResponse(status="error", code=401, message="Not Authenticated"),
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_401_UNAUTHORIZED,
+                message="Not Authenticated",
+            ),
         )
 
     payload = verify_jwt(token)
@@ -26,8 +30,12 @@ async def get_current_user(
 
     if not user:
         raise HTTPException(
-            status_code=401,
-            detail=ErrorResponse(code=401, message="Invalid access token"),
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_401_UNAUTHORIZED,
+                message="Invalid access token",
+            ),
         )
 
     return UserOutput(**user)
