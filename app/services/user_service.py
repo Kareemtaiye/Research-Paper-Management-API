@@ -56,6 +56,14 @@ class UserService:
         logger.info(f"Updated user {user_id} with new password hash")
         return count
 
+    async def mark_email_verified(self, conn, user_id: str):
+        count = await self.repo.mark_email_verified(conn=conn, user_id=user_id)
+
+        if count == 0:
+            raise UserNotFoundException(user_id)
+        logger.info(f"Marked email verified for user {user_id}")
+        return count
+
     async def delete_user(self, conn, user_id: str):
         count = await self.repo.delete_user(conn=conn, user_id=user_id)
 
