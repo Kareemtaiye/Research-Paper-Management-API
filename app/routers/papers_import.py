@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.database import get_conn
 from app.dependencies.user import get_current_user
+from app.exceptions.schemas import ErrorResponse
 from app.schemas import task
 from app.schemas.paper import ArxivImportResponse, ArxivImportRequest
 from app.schemas.user import UserOutput
@@ -33,7 +34,11 @@ async def upload_arxiv_paper(
     if not arxiv_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid Arxiv URL or ID. Expected format: https://arxiv.org/abs/2301.00001 or 2301.00001",
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_400_BAD_REQUEST,
+                message="Invalid Arxiv URL or ID. Expected format: https://arxiv.org/abs/2301.00001 or 2301.00001",
+            ),
         )
 
     # Construct arxiv URL if user provided raw ID
@@ -70,7 +75,11 @@ async def upload_arxiv_paper(
         print("Failed to create task record in PostgreSQL:", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create task record in PostgreSQL for Arxiv import: arxiv_id={arxiv_id}.",
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                message=f"Failed to create task record in PostgreSQL for Arxiv import: arxiv_id={arxiv_id}.",
+            ),
         )
 
     # Start backgorund task to fetch metadata from Arxiv
@@ -84,7 +93,11 @@ async def upload_arxiv_paper(
         print("Failed to start background task for Arxiv import:", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to start background task for Arxiv import: arxiv_id={arxiv_id}.",
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                message=f"Failed to start background task for Arxiv import: arxiv_id={arxiv_id}.",
+            ),
         )
 
     # 4. Update placeholder task_id with real Celery task_id
