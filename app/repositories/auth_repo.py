@@ -13,7 +13,7 @@ class AuthRepository:
         query = """
         INSERT INTO users (email, role, full_name, password) 
         values ($1, $2, $3, $4) 
-        RETURNING id, email, full_name, role, created_at
+        RETURNING id, email, full_name, role, email_verified, created_at
         """
 
         return await conn.fetchrow(query, *user_data.values())
