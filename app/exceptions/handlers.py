@@ -108,10 +108,29 @@ def register_exception_handlers(app):  # explicit reg(to avoid silent import iss
 
     @app.exception_handler(StarletteHTTPException)
     def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+        detail = exc.detail
 
-        return JSONResponse(
-            status_code=exc.status_code, content=jsonable_encoder(exc.detail)
-        )
+        if isinstance(detail, ErrorResponse):
+            content = jsonable_encoder(detail)
+        elif isinstance(detail, dict) and "message" in detail:
+            content = jsonable_encoder(
+                ErrorResponse(
+                    status=detail.get("status", "error"),
+                    code=detail.get("code", exc.status_code),
+                    message=str(detail["message"]),
+                    details=detail.get("details"),
+                )
+            )
+        else:
+            content = jsonable_encoder(
+                ErrorResponse(
+                    status="error",
+                    code=exc.status_code,
+                    message=str(detail),
+                )
+            )
+
+        return JSONResponse(status_code=exc.status_code, content=content)
 
     @app.exception_handler(ExpiredJWTError)
     def expired_jwt_handler(request: Request, exc: ExpiredJWTError):
