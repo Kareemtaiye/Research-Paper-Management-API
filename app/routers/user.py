@@ -4,10 +4,10 @@ from typing import Annotated
 from pydantic import EmailStr
 
 from app.core.security import hash_password, verify_password
-from fastapi import APIRouter, Body, Depends
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from app.core.database import get_conn
 from app.dependencies.user import get_current_user
+from app.exceptions.schemas import ErrorResponse
 from app.schemas.user import UpdateUserRequest
 from app.services.auth_service import AuthService
 from app.services.user_service import UserService
@@ -47,21 +47,23 @@ async def change_password(
 
     user = await auth_service.find_user_by_email(conn=conn, email=current_user.email)
     if not user:
-        return JSONResponse(
-            status_code=404,
-            content={
-                "status": "error",
-                "message": "User not found",
-            },
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_404_NOT_FOUND,
+                message="User not found",
+            ),
         )
 
     if not verify_password(current_password, user["password"]):
-        return JSONResponse(
-            status_code=400,
-            content={
-                "status": "error",
-                "message": "Current password is incorrect",
-            },
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_400_BAD_REQUEST,
+                message="Current password is incorrect",
+            ),
         )
 
     await service.update_user_password(
