@@ -8,7 +8,7 @@ from fastapi import (
     Header,
     Query,
     Response,
-    Request,
+    status,
 )
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -17,7 +17,13 @@ from app.core.database import get_conn
 from app.core.security import hash_password
 from app.dependencies.user import get_current_user
 from app.exceptions.schemas import ErrorResponse
-from app.schemas.auth import ForgotPasswordRequest, LoginInput, ResetPasswordRequest
+from app.schemas.auth import (
+    ForgotPasswordRequest,
+    LoginInput,
+    ResendVerificationRequest,
+    ResetPasswordRequest,
+    VerifyEmailRequest,
+)
 from app.schemas.user import UserCreate, UserOutput
 from app.services.user_service import UserService
 from app.services.auth_service import AuthService
@@ -43,10 +49,11 @@ user_service = UserService()
 
 @router.post("/register", tags=["register"])
 async def register_user(user_data: UserCreate, conn=Depends(get_conn)):
-    data = await service.register(user_data=user_data, conn=conn)
+    user, token = await service.register(user_data=user_data, conn=conn)
+    email_tasks.send_email_verification_email.delay(user["email"], token)
 
     return JSONResponse(
-        status_code=201, content=jsonable_encoder({"status": "success", "data": data})
+        status_code=201, content=jsonable_encoder({"status": "success", "data": user})
     )
 
 
@@ -69,8 +76,12 @@ async def login(
     if not token_data:
         logger.warning("Invalid login attempt")
         raise HTTPException(
-            status_code=400,
-            detail=(ErrorResponse(code=400, message="Invalid email or password")),
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_400_BAD_REQUEST,
+                message="Invalid email or password",
+            ),
         )
 
     access_token, refresh_token = token_data
@@ -83,10 +94,10 @@ async def login(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=False,
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=604800,
-            path="/auth/",
+            path="/",
         )
 
     # FastAPI will use the 'response' parameter to send the cookies.
@@ -95,23 +106,31 @@ async def login(
 
 @router.post("/logout", tags=["logout"])
 async def logout(
-    response: Response,
+    response: Response,  # 👈 FastAPI tracks this object
     refresh_token: Annotated[str | None, Cookie()] = None,
     conn=Depends(get_conn),
     current_user: UserOutput = Depends(get_current_user),
 ):
-
     if not refresh_token:
-        return Response(status_code=204)  # Already logged out
+        response.status_code = 204
+        return response
 
     session = await service.logout(conn=conn, token=refresh_token)
 
     if not session:
-        return Response(status_code=204)  # Session might be deleted(by logging out)
+        response.status_code = 204
+        return response
 
-    # clearing the cookie
-    response.delete_cookie(key="refresh_token")
-    return Response(status_code=204)
+    response.delete_cookie(
+        key="refresh_token",
+        path="/",
+        samesite="none",
+        secure=True,
+        httponly=True,
+    )
+
+    response.status_code = 204  # 👈 Set status code on the tracked object
+    return response
 
 
 @router.post("/refresh", tags=["refresh"])
@@ -122,12 +141,12 @@ async def refresh_token(
 ):
 
     if not refresh_token:
-        return JSONResponse(
-            status_code=401,
-            content=jsonable_encoder(
-                ErrorResponse(
-                    status="error", code=401, message="No refresh token provided"
-                )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_401_UNAUTHORIZED,
+                message="No refresh token provided",
             ),
         )
 
@@ -195,14 +214,22 @@ async def reset_password(
 
     if not token_row:
         raise HTTPException(
-            status_code=400,
-            detail="Invalid or expired reset token.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_400_BAD_REQUEST,
+                message="Invalid or expired reset token.",
+            ),
         )
 
     if token_row["expires_at"] < datetime.utcnow():
         raise HTTPException(
-            status_code=400,
-            detail="Invalid or expired reset token.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_400_BAD_REQUEST,
+                message="Invalid or expired reset token.",
+            ),
         )
 
     hashed_password = hash_password(body.new_password)
@@ -224,8 +251,44 @@ async def reset_password(
 
 
 @router.post("/verify-email", tags=["verify-email"])
-async def verify_email(request: Request, email: str, conn=Depends(get_conn)): ...
+async def verify_email(body: VerifyEmailRequest, conn=Depends(get_conn)):
+    result = await service.verify_email(conn=conn, token=body.token)
+
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_400_BAD_REQUEST,
+                message="Invalid or expired verification token.",
+            ),
+        )
+
+    user, newly_verified = result
+
+    if newly_verified:
+        email_tasks.send_email_verification_success_email.delay(user["email"])
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "success",
+            "message": "Email verified successfully",
+        },
+    )
 
 
 @router.post("/resend-verification", tags=["resend-verification"])
-async def resend_verification(request: Request, email: str, conn=Depends(get_conn)): ...
+async def resend_verification(body: ResendVerificationRequest, conn=Depends(get_conn)):
+    result = await service.resend_verification(conn=conn, email=body.email)
+
+    if result:
+        user, token = result
+        email_tasks.send_email_verification_email.delay(user["email"], token)
+    else:
+        logger.warning(f"Resend verification skipped for email: {body.email}")
+
+    return {
+        "status": "success",
+        "message": "If that email exists and is unverified, a verification link was sent",
+    }
