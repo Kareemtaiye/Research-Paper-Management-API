@@ -1,6 +1,10 @@
+from datetime import datetime
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 import resend
 from app.core.config import settings
-from app.schemas import user
 from app.services.email_renderer import render_email
 from app.core.logger import logger
 
@@ -41,15 +45,18 @@ class EmailManager:
         # })
 
     def send(self, from_email: str, user_email: str, subject: str, html: str) -> dict:
-        params = {
-            "from": f"{self.display_name} <{from_email}>",
-            "to": str(user_email),
-            "reply_to": self.reply_to_email,
-            "subject": subject,
-            "html": html,
-        }
-        email = resend.Emails.send(params)
-        return email
+        if settings.is_production:
+            params = {
+                "from": f"{self.display_name} <{from_email}>",
+                "to": str(user_email),
+                "reply_to": self.reply_to_email,
+                "subject": subject,
+                "html": html,
+            }
+            return resend.Emails.send(params)
+
+        self._send_local(user_email, subject, html, from_email)
+        return {"status": "sent", "to": user_email}
 
     def send_welcome_email(self, user_email: str, user_full_name: str | None):
         subject = "Welcome to PaperBase"
@@ -67,7 +74,6 @@ class EmailManager:
     def send_paper_complete_email(
         self, subject: str, user_email: str, user_full_name: str, paper: dict
     ):
-        # In email templates
         hi = f"Hi {user_full_name or user_email.split('@')[0]},"
         html = render_email(
             "paper_completed.html",
@@ -81,7 +87,6 @@ class EmailManager:
                 "arxiv_url": paper["arxiv_url"],
             },
         )
-        # Logic to send email (e.g., using an email service or SMTP)
         self.send(self.noreply_email, user_email, subject, html)
         logger.info(
             f"Email sent to {user_email} about paper '{paper['title']}' completion."
@@ -101,25 +106,33 @@ class EmailManager:
         self.send(self.security_email, user_email, subject, html)
         logger.info(f"Password reset email sent to {user_email}.")
 
-    def send_email_verification_email(self, user_email: str, token: str):
+    def send_email_verification_email(
+        self, user_email: str, token: str, full_name: str | None = None
+    ):
         subject = "Email Verification"
         verify_link = f"{frontend_url}/verify-email?token={token}"
         html = render_email(
-            "email_verification.html",
+            "verify_email.html",
             {
                 "verify_link": verify_link,
                 "support_email": self.reply_to_email,
                 "email": user_email,
+                "full_name": full_name,
             },
         )
         self.send(self.verify_email, user_email, subject, html)
         logger.info(f"Email verification email sent to {user_email}.")
 
-    def send_email_verification_success_email(self, user_email: str):
+    def send_email_verification_success_email(
+        self, user_email: str, full_name: str | None = None
+    ):
         subject = "Email Verified Successfully"
         html = render_email(
             "email_verification_success.html",
             {
+                "email": user_email,
+                "full_name": full_name,
+                "dashboard_url": f"{frontend_url}/",
                 "support_email": self.reply_to_email,
             },
         )
@@ -131,14 +144,15 @@ class EmailManager:
         html = render_email(
             "password_reset_success.html",
             {
-                "support_email": self.reply_to_email,
+                "email": user_email,
+                "reset_at": datetime.utcnow().strftime("%B %d, %Y at %H:%M UTC"),
+                "login_url": f"{frontend_url}/login",
             },
         )
         self.send(self.security_email, user_email, subject, html)
         logger.info(f"Password reset success email sent to {user_email}.")
 
     def send_feedback_email(self, user_email: str, type: str, message: str):
-
         subject = {
             "feedback": "📝 New Feedback — RPM",
             "bug": "Bug Report — RPM",
@@ -155,3 +169,19 @@ class EmailManager:
                <p>{message}</p>
            """,
         )
+
+
+
+    def _send_local(self, to: str, subject: str, html: str, from_email: str):
+        """Helper for MailHog local sending."""
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = f"{self.display_name} <{from_email}>"
+        msg["To"] = to
+        msg["Reply-To"] = self.reply_to_email
+        msg.attach(MIMEText(html, "html"))
+
+        with smtplib.SMTP(
+            settings.mail_hog_smtp_host, settings.mail_hog_smtp_port
+        ) as server:
+            server.sendmail(from_email, to, msg.as_string())
