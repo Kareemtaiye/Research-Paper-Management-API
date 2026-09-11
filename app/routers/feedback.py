@@ -1,9 +1,9 @@
 # app/routers/feedback.py
-from fastapi import APIRouter
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional
 
+from app.exceptions.schemas import ErrorResponse
 from app.tasks.email_tasks import send_feedback_email
 
 router = APIRouter()
@@ -21,9 +21,13 @@ async def submit_feedback(
     # no auth required — anyone can submit
 ):
     if not body.message.strip():
-        return JSONResponse(
-            status_code=400,
-            content={"status": "error", "message": "Message cannot be empty"},
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_400_BAD_REQUEST,
+                message="Message cannot be empty",
+            ),
         )
 
     send_feedback_email.delay(body.email or "not-provided", body.type, body.message)
