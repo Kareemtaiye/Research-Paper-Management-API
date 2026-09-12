@@ -79,6 +79,17 @@ async def change_password(
 async def delete_account(
     current_user=Depends(get_current_user), conn=Depends(get_conn)
 ):
+    # Option 1 — check in delete/import endpoints
+    if current_user.email == "demo@kareemtaiye.com":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_403_FORBIDDEN,
+                message="Demo account is read-only",
+            ),
+        )
+
     await service.delete_user(conn=conn, user_id=current_user.id)
 
     return {"status": "success", "message": "User account deleted successfully"}
@@ -86,6 +97,15 @@ async def delete_account(
 
 @router.delete("/me/library")
 async def clear_library(current_user=Depends(get_current_user), conn=Depends(get_conn)):
+    if current_user.email == "demo@kareemtaiye.com":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_403_FORBIDDEN,
+                message="Demo account is read-only",
+            ),
+        )
     await service.clear_user_library(conn=conn, user_id=current_user.id)
 
     return {"status": "success", "message": "User library cleared successfully"}
