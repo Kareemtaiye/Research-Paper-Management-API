@@ -43,7 +43,12 @@ class AuthService:
         password_hash = hash_password(user_data.password)
 
         user = await self.repo.create_user(
-            conn=conn, user_data={**user_data.model_dump(), "password": password_hash}
+            conn=conn,
+            user_data={
+                **user_data.model_dump(),
+                "role": "USER",
+                "password": password_hash,
+            },
         )
         token = await self.issue_email_verification_token(conn=conn, user_id=user["id"])
 
