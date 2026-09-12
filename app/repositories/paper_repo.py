@@ -54,16 +54,10 @@ class PaperRepository:
     # ------ -------
 
     @with_connection
-    async def get_all_papers(self, conn: asyncpg.Connection, page: int, per_page: int):
+    async def get_all_papers(self, conn: asyncpg.Connection):
+        query = "SELECT * FROM papers"
 
-        offset = (page - 1) * per_page
-
-        data_query = "SELECT * FROM papers OFFSET $1 LIMIT $2"
-        count_query = "SELECT COUNT(*) FROM papers"
-
-        data = await conn.fetch(data_query, offset, per_page)
-        count = await conn.fetchval(count_query)
-        return {"data": data, "count": count}
+        return await conn.fetch(query)
 
     @with_connection
     async def get_paper(self, conn: asyncpg.Connection, paper_id: str):
