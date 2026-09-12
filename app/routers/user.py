@@ -30,6 +30,16 @@ async def update_me(
     current_user=Depends(get_current_user),
     conn=Depends(get_conn),
 ):
+
+    if current_user.email == "demo@kareemtaiye.com":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_403_FORBIDDEN,
+                message="Demo account is read-only",
+            ),
+        )
     await service.update_user_profile(
         conn=conn, user_id=current_user.id, email=body.email, full_name=body.full_name
     )
@@ -44,6 +54,15 @@ async def change_password(
     current_user=Depends(get_current_user),
     conn=Depends(get_conn),
 ):
+    if current_user.email == "demo@kareemtaiye.com":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=ErrorResponse(
+                status="error",
+                code=status.HTTP_403_FORBIDDEN,
+                message="Demo account is read-only",
+            ),
+        )
 
     user = await auth_service.find_user_by_email(conn=conn, email=current_user.email)
     if not user:
