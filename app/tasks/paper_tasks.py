@@ -144,6 +144,7 @@ def fetch_arxiv_paper_metadata(self, paper_id: str, arxiv_id: str, owner_id: str
             progress=100,
             stage="completed",
             stage_message="Import complete",
+            worker_name=self.request.hostname,
             result={"paper_id": str(paper_id), "title": title},
         )
 
