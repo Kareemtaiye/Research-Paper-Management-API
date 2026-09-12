@@ -3,7 +3,6 @@ from uuid import UUID
 from app.core.exceptions import PaperNotFoundException
 from app.repositories.paper_repo import PaperRepository
 
-from app.schemas.request import ListQueryParams
 from app.services.paper_tag_service import PaperTagsService
 from app.utils.generators import gen_list_doc
 from app.core.logger import logger
@@ -34,8 +33,8 @@ class PaperService:
         return count
 
     @gen_list_doc
-    async def get_all_papers(self, conn, query_params: ListQueryParams):
-        return await self.repo.get_all_papers(conn=conn, **query_params.model_dump())
+    async def get_all_papers(self, conn):
+        return await self.repo.get_all_papers(conn=conn)
 
     async def get_user_papers(self, conn, user_id: str | UUID):
         return await self.repo.get_user_papers(conn=conn, user_id=user_id)

@@ -55,7 +55,7 @@ async def read_all_papers(
     _: None = Depends(admin_only),
 ):
 
-    data = await service.get_all_papers(conn=conn, query_params=params)
+    data = await service.get_all_papers(conn=conn)
 
     response_obj = ListResponse(
         data=[dict(record) for record in data],
