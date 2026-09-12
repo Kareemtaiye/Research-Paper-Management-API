@@ -12,7 +12,7 @@ from app.dependencies.user import get_current_user
 from app.dependencies.permission import RequireOwnerOrRole, RequireRole
 from app.schemas.paper import PaperCreate, PaperResponse
 from app.schemas.request import ListQueryParams, SearchQueryParams
-from app.schemas.response import ListResponse
+from app.schemas.response import ListResponse, ListSearchResponse
 from app.schemas.user import UserOutput
 from app.services.paper_service import PaperService
 from app.tasks.search_tasks import remove_paper_from_elasticsearch
@@ -112,7 +112,7 @@ async def search_papers(
         conn=conn, q=q, user_id=str(current_user.id), limit=limit, offset=offset
     )
 
-    response_data = ListResponse(
+    response_data = ListSearchResponse(
         data=[dict(record) for record in data["data"]],
         page=(offset // limit) + 1,
         per_page=limit,
