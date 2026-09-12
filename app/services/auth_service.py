@@ -46,7 +46,6 @@ class AuthService:
             conn=conn,
             user_data={
                 **user_data.model_dump(),
-                "role": "USER",
                 "password": password_hash,
             },
         )

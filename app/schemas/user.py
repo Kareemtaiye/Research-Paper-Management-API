@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr
 
 class BaseUser(BaseModel):
     email: EmailStr
+    role: str = "USER"
 
 
 class UserCreate(BaseUser):
@@ -16,7 +17,6 @@ class UserCreate(BaseUser):
 class UserOutput(BaseUser):
     model_config = ConfigDict(extra="ignore")
 
-    role: str
     id: str | UUID
     full_name: str | None = None
     email_verified: bool
