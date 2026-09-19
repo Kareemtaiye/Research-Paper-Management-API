@@ -106,7 +106,7 @@ async def login(
 
 @router.post("/logout", tags=["logout"])
 async def logout(
-    response: Response,  # 👈 FastAPI tracks this object
+    response: Response,
     refresh_token: Annotated[str | None, Cookie()] = None,
     conn=Depends(get_conn),
     current_user: UserOutput = Depends(get_current_user),
@@ -129,7 +129,7 @@ async def logout(
         httponly=True,
     )
 
-    response.status_code = 204  # 👈 Set status code on the tracked object
+    response.status_code = 204
     return response
 
 
